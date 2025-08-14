@@ -1,8 +1,0 @@
-W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/nwnk1uld
-Simulating data loading for: 20newsgroups
-
-Running experiment with method: bertopic
-BERTopic pipeline finished.
-Method finished in 2.97 seconds.
-Mock ARI Score: 0.7285
-Run manifest saved to: outputs/devoted-resonance-26-nwnk1uld/manifest.json

@@ -1,8 +1,0 @@
-W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/6kwpdu7e
-Simulating data loading for: agnews
-
-Running experiment with method: bertopic
-BERTopic pipeline finished.
-Method finished in 3.97 seconds.
-Mock ARI Score: 0.7869
-Run manifest saved to: outputs/royal-sun-52-6kwpdu7e/manifest.json

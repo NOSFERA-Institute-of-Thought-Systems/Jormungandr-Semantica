@@ -1,8 +1,0 @@
-W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/cho57pxc
-Simulating data loading for: 20newsgroups
-
-Running experiment with method: bertopic
-BERTopic pipeline finished.
-Method finished in 3.12 seconds.
-Mock ARI Score: 0.7407
-Run manifest saved to: outputs/sage-firebrand-24-cho57pxc/manifest.json

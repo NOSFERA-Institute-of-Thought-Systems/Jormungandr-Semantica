@@ -1,8 +1,0 @@
-W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/05oi61mt
-Simulating data loading for: 20newsgroups
-
-Running experiment with method: jormungandr
-Jörmungandr pipeline finished.
-Method finished in 0.00 seconds.
-Mock ARI Score: 0.7882
-Run manifest saved to: outputs/sweet-mountain-18-05oi61mt/manifest.json

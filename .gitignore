@@ -50,3 +50,6 @@ data/
 
 wandb/paper/figures/*.png
 outputs/*.csv
+
+# MLOps Cache
+wandb/

@@ -1,7 +1,0 @@
---- Jörmungandr-Semantica Installation Verification ---
-Creating simple sample data...
-Building k-NN graph with k=10...
-
---- Verification ---
-Neighbors shape: (100, 10)
-Distances shape: (100, 10)
