@@ -1,0 +1,63 @@
+\chapter{Algorithmic Innovations}
+\label{chap:innovations}
+
+The baseline framework presented in Chapter \ref{chap:framework} establishes a robust and effective pipeline. However, the true power of the geometric perspective lies in its ability to inspire novel algorithms that explicitly leverage the structure of the data manifold. This chapter introduces two such innovations designed to enhance the core framework: an adaptive wavelet kernel that tailors the multi-scale analysis to the local geometry, and a curvature-regularized dimensionality reduction method that forces the final embedding to respect the manifold's structural properties.
+
+\section{Adaptive Anisotropic Wavelets}
+\label{sec:adaptive_wavelets}
+A limitation of the standard heat kernel wavelet, $\Psi_t = e^{-t\Lcal}$, is its isotropy. The diffusion process it models spreads information equally in all directions from a source node, governed by a single global scale parameter $t$. On a complex text manifold, however, the local geometry is highly anisotropic; information should diffuse more readily along a dense "thread" of a sub-topic than across a sparse "bridge" separating two distinct topics.
+
+To address this, we introduce the **Anisotropic Curvature-Modulated Wavelet (ACMW)**. The core idea is to replace the scalar Laplacian $\Lcal$ in the heat kernel with a position-aware, anisotropic operator that is modulated by the local Ricci curvature.
+
+\begin{definition}[Curvature-Modulated Laplacian]
+Let $\kappa(e)$ be the Ollivier-Ricci curvature of an edge $e=(v_i, v_j)$. We define a curvature modulation function $h: [-1, 1] \to \R^+$ such that $h(\kappa)$ is large for positive curvature (within clusters) and small for negative curvature (across bridges). A suitable choice is a sigmoid function shifted and scaled:
+\begin{equation}
+    h(\kappa) = \alpha \left( \frac{1}{1 + e^{-\beta \kappa}} - 0.5 \right) + 1
+\end{equation}
+where $\alpha, \beta > 0$ control the intensity and sharpness of the modulation. We then define a new, \textbf{anisotropic weight matrix} $W'$:
+\begin{equation}
+    W'_{ij} = W_{ij} \cdot h(\kappa(v_i, v_j))
+\end{equation}
+From this, we construct a new \textbf{Curvature-Modulated Laplacian}, $\Lcal'$.
+\end{definition}
+
+This new operator effectively "slows down" diffusion across negatively curved bridges and "speeds it up" within positively curved communities. The ACMW operator is then defined as:
+\begin{equation}
+    \Psi'_{t} = e^{-t\Lcal'}
+\end{equation}
+
+When used in Stage 3 of our pipeline, this adaptive wavelet has a profound effect. At small scales $t$, it produces representations that are hyper-aware of the fine-grained community structure, as the diffusion is effectively "trapped" within high-curvature regions. This leads to a more refined and accurate disentanglement of closely related but distinct sub-topics. As we will show in our ablation studies, the use of ACMW provides a significant performance boost, particularly on datasets with complex, hierarchical topic structures.
+
+\section{Curvature-Regularized UMAP (CR-UMAP)}
+\label{sec:cr_umap}
+Stage 4 of our baseline pipeline uses UMAP to find a low-dimensional representation of the high-dimensional wavelet feature space. While UMAP is a powerful manifold learning algorithm, it is "unsupervised" in the sense that it only uses the intrinsic structure of its input space (the wavelet features). We possess, however, an additional and extremely valuable source of information: the Ricci curvature of the original data graph.
+
+We propose a novel, semi-supervised dimensionality reduction technique called **Curvature-Regularized UMAP (CR-UMAP)**. This method modifies the UMAP optimization process to explicitly incorporate geometric priors derived from the graph's curvature.
+
+The standard UMAP algorithm seeks to find a low-dimensional embedding $Y = \{\bm{y}_i\}$ that minimizes the cross-entropy between the high-dimensional similarity distribution (derived from the k-NN graph of the input data $Z$) and a low-dimensional similarity distribution (derived from a Student's t-distribution on the distances between points in $Y$). The loss function is approximately:
+\begin{equation}
+    \mathcal{L}_{UMAP}(Y) \approx \sum_{i,j} \left( p_{ij} \log \frac{p_{ij}}{q_{ij}} + (1-p_{ij}) \log \frac{1-p_{ij}}{1-q_{ij}} \right)
+\end{equation}
+where $p_{ij}$ is the high-dimensional similarity and $q_{ij}$ is the low-dimensional similarity.
+
+We introduce a **curvature regularization term** to this loss function. The goal of this term is to penalize embeddings that violate the geometric structure revealed by the curvature analysis. Specifically, we want points that form positively curved "hubs" to be tightly clustered in the output space, and points on negatively curved "bridges" to be positioned between these clusters.
+
+\begin{definition}[Curvature Regularization Term]
+Let $\bar{\kappa}(v_i)$ be the average curvature of all edges connected to node $v_i$. We define the curvature regularization term $\mathcal{L}_{CR}$ as:
+\begin{equation}
+    \mathcal{L}_{CR}(Y) = \gamma \sum_{i,j \in \Ecal} w_{ij}' \norm{\bm{y}_i - \bm{y}_j}_2^2
+\end{equation}
+where $\gamma$ is a regularization hyperparameter and the weights $w_{ij}'$ are derived from the node curvatures:
+\begin{equation}
+    w_{ij}' = \max(0, \bar{\kappa}(v_i)) + \max(0, \bar{\kappa}(v_j))
+\end{equation}
+\end{definition}
+
+The final CR-UMAP loss function is a linear combination of the UMAP loss and our regularization term:
+\begin{equation}
+    \mathcal{L}_{CR-UMAP}(Y) = \mathcal{L}_{UMAP}(Y) + \mathcal{L}_{CR}(Y)
+\end{equation}
+
+The effect of this regularization term is to add "springs" between points in the low-dimensional embedding, where the stiffness of the spring is proportional to the average positive curvature of the connected nodes. Nodes within a high-curvature hub will be pulled tightly together, enhancing the density and separation of the resulting clusters. Nodes with negative curvature will have a zero-stiffness spring connecting them, allowing them to float freely between the hubs, correctly positioning them as bridges.
+
+Implementing CR-UMAP involves modifying the optimization loop of the UMAP algorithm to include the gradients from this new regularization term. This semi-supervised approach injects our explicit geometric knowledge directly into the final representation, creating embeddings that are not only topologically faithful but also explicitly structured according to the principles of geometric clusterability outlined in Theorem \ref{thm:clusterability_discrete}.

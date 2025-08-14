@@ -1,0 +1,93 @@
+\chapter{Mathematical Preliminaries}
+\label{chap:preliminaries}
+
+The Jörmungandr-Semantica framework is situated at the confluence of spectral graph theory, computational harmonic analysis, and discrete differential geometry. This chapter establishes the essential mathematical concepts that form the language of our work.
+
+\section{Graphs as Discrete Manifolds}
+\label{sec:graphs_and_laplacian}
+We begin with the premise that a dataset of high-dimensional points $X = \{\bm{x}_1, \dots, \bm{x}_n\} \subset \R^D$ can be modeled as a discrete approximation of an underlying low-dimensional manifold $\Mcal$. The primary tool for this approximation is a weighted graph, $\Gcal = (\Vcal, \Ecal, W)$.
+
+\begin{definition}[k-NN Graph]
+Given a point cloud $X$, its \textbf{k-Nearest Neighbor (k-NN) graph} is constructed by creating a vertex $v_i$ for each point $\bm{x}_i$. An edge $(v_i, v_j) \in \Ecal$ exists if $\bm{x}_j$ is among the $k$ nearest neighbors of $\bm{x}_i$ (or vice-versa, for a symmetric graph).
+\end{definition}
+
+The edge weights $W_{ij}$ quantify the similarity between connected points. A common choice, used throughout this work, is the Gaussian kernel, or heat kernel:
+\begin{equation}
+    W_{ij} = \exp\left(-\frac{\norm{\bm{x}_i - \bm{x}_j}_2^2}{\sigma^2}\right)
+\end{equation}
+where $\sigma$ is a scale parameter. This choice is motivated by its connection to diffusion processes and its inherent smoothness. The graph $\Gcal$ now serves as our computational domain.
+
+\subsection{The Graph Laplacian: A Discrete Laplace-Beltrami Operator}
+The central operator in our framework is the graph Laplacian. Its properties are deeply analogous to the Laplace-Beltrami operator on continuous manifolds, which governs phenomena like heat diffusion and vibration.
+
+\begin{definition}[Graph Laplacian]
+Let $W$ be the $n \times n$ weighted adjacency matrix and $D$ be the diagonal degree matrix where $D_{ii} = \sum_j W_{ij}$. The \textbf{combinatorial Graph Laplacian} is defined as:
+\begin{equation}
+    \Lcal = D - W
+\end{equation}
+The \textbf{normalized Graph Laplacian}, which accounts for variations in node degree, is:
+\begin{equation}
+    \Lcal_{norm} = I - D^{-1/2} W D^{-1/2}
+\end{equation}
+\end{definition}
+Unless stated otherwise, $\Lcal$ refers to the combinatorial Laplacian. As a real, symmetric, positive semi-definite matrix, $\Lcal$ possesses a complete orthonormal basis of eigenvectors $\{\bm{u}_k\}_{k=1}^n$ with corresponding real, non-negative eigenvalues $0 = \lambda_1 \le \lambda_2 \le \dots \le \lambda_n$. This eigendecomposition, $\Lcal = U \Lambda U^T$, is the foundation of spectral graph theory.
+
+The eigenvalues $\lambda_k$ represent the "frequencies" of the graph, while the eigenvectors $\bm{u}_k$ are the corresponding "harmonics" or modes of variation. The eigenvector $\bm{u}_1$ associated with $\lambda_1=0$ is constant across the graph's connected components. The second eigenvalue, $\lambda_2$, known as the \textbf{Fiedler value} or **spectral gap**, is of particular importance. Cheeger's inequality provides a fundamental link between this algebraic quantity and the combinatorial structure of the graph: a larger spectral gap implies the graph is more difficult to partition into two large, well-separated sets.
+
+\section{Graph Signal Processing and Spectral Filtering}
+A graph signal is a function that assigns a value to each vertex, represented as a vector $\bm{f} \in \R^n$. In our work, each dimension of the document embeddings serves as a graph signal.
+
+\begin{definition}[Graph Fourier Transform]
+The \textbf{Graph Fourier Transform (GFT)} of a signal $\bm{f}$ is its decomposition into the graph's harmonic basis:
+\begin{equation}
+    \hat{f}(\lambda_k) = \langle \bm{f}, \bm{u}_k \rangle = \bm{u}_k^T \bm{f}
+\end{equation}
+The signal can be perfectly reconstructed via the inverse GFT: $\bm{f} = \sum_{k=1}^n \hat{f}(\lambda_k) \bm{u}_k = U \hat{\bm{f}}$.
+\end{definition}
+
+This allows us to define filtering operations in the spectral domain. A \textbf{spectral graph filter} is an operator $g(\Lcal)$ that modulates the graph frequencies. Its action on a signal $\bm{f}$ is defined by its effect on the GFT coefficients:
+\begin{equation}
+    (g(\Lcal)\bm{f})^{\wedge}(\lambda_k) = g(\lambda_k) \hat{f}(\lambda_k)
+\end{equation}
+This is equivalent to the matrix operation $\bm{f}_{filtered} = U g(\Lambda) U^T \bm{f}$, where $g(\Lambda)$ is a diagonal matrix with entries $g(\lambda_k)$. Low-pass filters use kernels $g(\lambda)$ that are large for small $\lambda$, preserving smooth signals. High-pass filters do the opposite, amplifying signals that vary rapidly between neighboring nodes.
+
+\subsection{The Spectral Graph Wavelet Transform (SGWT)}
+The GFT provides a global view of a signal's frequency content but loses all spatial information. The SGWT \citep{hammond2011wavelets} remedies this by defining a set of localized, band-pass filters, analogous to wavelets in classical signal processing.
+
+A wavelet dictionary is generated from a single kernel function $g(\lambda)$, the "mother wavelet," by scaling it: $g_t(\lambda) = g(t\lambda)$, where $t \in \R^+$ is the scale parameter. The wavelet coefficients of a signal $\bm{f}$ at scale $t$ are given by the output of this scaled filter:
+\begin{equation}
+    \bm{W_f}(t) = g_t(\Lcal)\bm{f} = U g(t\Lambda) U^T \bm{f}
+\end{equation}
+The choice of kernel $g(\lambda)$ is critical. We utilize the \textbf{heat kernel}, $g(\lambda) = e^{-\lambda}$, resulting in scaled filters $g_t(\lambda) = e^{-t\lambda}$. The wavelet operator at scale $t$ is thus $\Psi_t = e^{-t\Lcal}$, which is the solution operator for the graph heat equation. The coefficients $\bm{W_f}(t)$ can be interpreted as the state of a heat diffusion process on the graph at time $t$, starting from an initial heat distribution $\bm{f}$. Small scales $t$ probe very local structure, while large scales reveal the global organization of the signal.
+
+\section{Discrete Ricci Curvature}
+To probe the local geometry of our text manifold, we require a notion of curvature applicable to our discrete graph representation. We employ Ollivier-Ricci curvature, a concept from optimal transport theory.
+
+\subsection{The Wasserstein Distance}
+At its core, Ollivier-Ricci curvature relies on measuring the distance between probability distributions. The \textbf{Wasserstein-1 distance}, or Earth Mover's Distance, provides a natural way to do this.
+
+\begin{definition}[Wasserstein-1 Distance]
+Let $(X, d)$ be a metric space, and let $\mu$ and $\nu$ be two probability measures on $X$. The Wasserstein-1 distance between them is defined as:
+\begin{equation}
+    W_1(\mu, \nu) = \inf_{\pi \in \Pi(\mu, \nu)} \int_{X \times X} d(x,y) \, d\pi(x,y)
+\end{equation}
+where $\Pi(\mu, \nu)$ is the set of all joint probability measures on $X \times X$ with marginals $\mu$ and $\nu$.
+\end{definition}
+Intuitively, $W_1(\mu, \nu)$ represents the minimum "cost" to transport the "mass" of distribution $\mu$ to match the distribution $\nu$, where the cost of moving a unit of mass from $x$ to $y$ is the distance $d(x,y)$.
+
+\subsection{Ollivier-Ricci Curvature on Graphs}
+Ollivier's insight was to apply this concept to the local neighborhoods of vertices on a graph \citep{ollivier2009ricci}. For each vertex $v_i$, we define a probability measure $m_i$ that is uniformly distributed over its immediate neighbors.
+
+\begin{definition}[Ollivier-Ricci Curvature]
+Let $\Gcal$ be a graph with shortest path distance $d(\cdot, \cdot)$. For two vertices $v_i, v_j \in \Vcal$, the Ollivier-Ricci curvature of the edge $(v_i, v_j)$ is:
+\begin{equation}
+    \kappa(v_i, v_j) = 1 - \frac{W_1(m_i, m_j)}{d(v_i, v_j)}
+\end{equation}
+where $m_i$ and $m_j$ are the uniform probability measures on the neighborhoods of $v_i$ and $v_j$, respectively.
+\end{definition}
+The intuition is powerful:
+\begin{itemize}
+    \item \textbf{Positive Curvature ($\kappa > 0$):} If the neighborhoods of $v_i$ and $v_j$ are "closer" to each other than $v_i$ and $v_j$ are themselves (i.e., $W_1(m_i, m_j)$ is small), the space is locally contracting. This occurs in dense, tightly-knit communities where neighbors are shared (e.g., triangles).
+    \item \textbf{Negative Curvature ($\kappa < 0$):} If the neighborhoods are "further" apart (i.e., $W_1(m_i, m_j)$ is large), the space is locally expanding. This occurs when an edge acts as a "bridge" between two otherwise disconnected parts of the graph.
+\end{itemize}
+This makes Ricci curvature an ideal tool for identifying thematic hubs (positive curvature regions) and conceptual bridges (negative curvature edges) in our text manifold, a concept we will leverage in our theoretical and applied contributions.

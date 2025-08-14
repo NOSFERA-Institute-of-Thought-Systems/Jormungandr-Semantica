@@ -1,0 +1,49 @@
+\chapter{Scalability: From Theory to Million-Node Graphs}
+\label{chap:scalability}
+
+The theoretical and algorithmic contributions presented thus far establish the Jörmungandr-Semantica framework as a powerful tool for geometric data analysis. However, for any modern data science method to be truly impactful, it must be computationally feasible on large-scale, real-world datasets. The ambition of this project extends to corpora containing millions or even billions of documents, which necessitates a deliberate and principled approach to scalability.
+
+This chapter analyzes the computational complexity and memory footprint of the core pipeline. We then outline concrete algorithmic and engineering strategies to overcome these bottlenecks. While the experiments in this dissertation were conducted on datasets with up to $\sim10^5$ nodes, constrained by the resources available on free-tier cloud platforms and local hardware, the architectural principles discussed here lay the groundwork for a future implementation capable of operating at a massive scale.
+
+\section{Complexity Analysis of the Core Pipeline}
+Let $N$ be the number of documents, $D$ be the embedding dimension, $k$ be the number of nearest neighbors, and $S$ be the number of wavelet scales. The primary computational bottlenecks are:
+
+\begin{enumerate}
+    \item \textbf{k-NN Graph Construction:} A naive, brute-force search for nearest neighbors has a complexity of $O(N^2 D)$. Our use of the Faiss library, which employs approximate nearest neighbor (ANN) search algorithms like Hierarchical Navigable Small Worlds (HNSW), dramatically reduces this. The construction complexity for HNSW is approximately $O(N \log N)$, making this step highly scalable.
+
+    \item \textbf{Laplacian Eigendecomposition:} This is the most significant bottleneck. Computing the full eigendecomposition of the $N \times N$ Laplacian matrix using standard dense methods has a complexity of $O(N^3)$. This is computationally infeasible for $N > 10^5$. Our current implementation relies on the dense solvers in `scipy.linalg.eigh`, which represents the primary barrier to scaling.
+
+    \item \textbf{Wavelet Transform:} The application of the wavelet operator, $\Psi_t X = U e^{-t\Lambda} U^T X$, involves three matrix multiplications. The dominant operation is $U^T X$, which has a complexity of $O(N^2 D)$. Performing this for $S$ scales results in a total complexity of $O(S N^2 D)$. This, like the eigendecomposition, is a major bottleneck.
+\end{enumerate}
+
+Clearly, the reliance on a full, dense eigendecomposition of the Laplacian is the central challenge to scaling the Jörmungandr-Semantica framework beyond medium-sized graphs.
+
+\section{Strategies for Scalable Geometric Analysis}
+We propose a three-pronged strategy to overcome these limitations, combining numerical approximation, graph coarsening, and distributed computation.
+
+\subsection{Approximation via Chebyshev Polynomials}
+The explicit computation of the matrix exponential $e^{-t\Lcal}X$ requires the full set of eigenvectors and eigenvalues. However, for spectral filtering, this is often unnecessary. The action of the filter $g(\Lcal)$ on a signal $\bm{f}$ can be efficiently \textit{approximated} without any eigendecomposition using polynomial approximations.
+
+The Chebyshev polynomial approximation is a standard and highly effective technique for this purpose \citep{hammond2011wavelets}. The function $g(\lambda)$ is approximated by a truncated series of Chebyshev polynomials of the first kind, $T_m(\lambda)$. The key insight is that the action of $T_m(\Lcal)\bm{f}$ can be computed via a series of sparse matrix-vector multiplications, leveraging the fact that $\Lcal$ is a sparse matrix (with at most $N \times k$ non-zero entries).
+
+The complexity of applying an $M$-th order Chebyshev approximation of the wavelet operator is $O(M \cdot |\Ecal| \cdot D \cdot S)$, where $|\Ecal|$ is the number of edges (approximately $N \cdot k$). For a sparse graph, this is on the order of $O(M N k D S)$, which is nearly linear in $N$. This approach completely bypasses the $O(N^3)$ eigendecomposition bottleneck, making wavelet analysis feasible on graphs with millions of nodes.
+
+\subsection{Graph Coarsening and Multi-Grid Solvers}
+For computations that fundamentally require spectral information, such as estimating curvature or applying the algorithmic innovations from Chapter \ref{chap:innovations}, a different approach is needed. Graph coarsening, also known as graph multi-grid, provides a powerful solution.
+
+The idea is to create a hierarchy of smaller, "coarsened" graphs $\Gcal_0, \Gcal_1, \dots, \Gcal_L$, where $\Gcal_0 = \Gcal$ is the original fine-grained graph, and $\Gcal_{i+1}$ is a smaller graph that approximates the structure of $\Gcal_i$. Geometric properties can be computed on the smallest, most manageable graph ($\Gcal_L$) and then "prolongated" or interpolated back up the hierarchy to the original graph.
+
+This approach is particularly promising for our Curvature-Regularized UMAP. We can compute an initial, coarse curvature map on $\Gcal_L$, use it to guide a coarse embedding, and then refine both the curvature map and the embedding as we move up to finer and finer graphs. This avoids the prohibitive cost of computing curvature on every edge of the original massive graph.
+
+\subsection{Architectural Vision for a Billion-Node System}
+While acknowledging the implementation constraints of the present work, we can outline a clear architectural vision for a system capable of analyzing billion-node text manifolds.
+
+Such a system would be built on a distributed computing framework like Apache Spark. The pipeline would be as follows:
+\begin{enumerate}
+    \item \textbf{Distributed ANN:} The Faiss index would be sharded and distributed across a cluster of machines. A MapReduce-style job would compute the nearest neighbors for partitions of the data.
+    \item \textbf{Distributed Graph Representation:} The graph itself would be stored in a distributed graph processing system like GraphX, which partitions the adjacency matrix across the cluster.
+    \item \textbf{Chebyshev on Spark:} The Chebyshev approximation of the wavelet transform would be implemented using Spark's native sparse matrix multiplication routines, allowing for the analysis of billion-edge graphs.
+    \item \textbf{Distributed Clustering:} The final low-dimensional embeddings would be clustered using scalable algorithms like Bisecting K-Means, which are available in Spark's MLlib.
+\end{enumerate}
+
+This vision, while ambitious, is a straightforward extension of the principles and algorithms developed in this dissertation. The theoretical framework remains unchanged; only the engineering implementation is scaled up. This demonstrates that the Jörmungandr-Semantica approach is not merely an academic curiosity but a viable blueprint for industrial-scale geometric data analysis.

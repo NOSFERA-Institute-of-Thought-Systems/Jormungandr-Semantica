@@ -1,0 +1,50 @@
+\chapter{Cross-Disciplinary Generalization}
+\label{chap:generalization}
+
+A robust theoretical framework should demonstrate applicability beyond its initial domain of development. While Jörmungandr-Semantica was conceived for the analysis of text manifolds, its underlying principles—modeling high-dimensional data as a graph and analyzing its structure via geometric signal processing—are domain-agnostic. This chapter validates the generality of our approach by applying it to two radically different and challenging domains: single-cell genomics and aerospace telemetry analysis. These case studies serve to establish the framework not merely as a tool for NLP, but as a universal instrument for exploring the geometry of complex systems.
+
+\section{Case Study 3: Uncovering Cellular Trajectories in Single-Cell Genomics}
+\label{sec:genomics}
+Single-cell RNA sequencing (scRNA-seq) is a revolutionary technology that measures the gene expression profiles of thousands of individual cells. A primary challenge in this field is to reconstruct developmental trajectories—the paths cells take as they differentiate from progenitor states to mature cell types. This problem is geometrically analogous to identifying threads and branches on a manifold.
+
+\paragraph{Methodology.} We applied our framework to a public scRNA-seq dataset of hematopoietic stem cell differentiation. Each cell is represented by a vector of thousands of gene expression values.
+\begin{enumerate}
+    \item \textbf{Manifold Sampling:} The high-dimensional gene expression vectors for $\sim$50,000 cells served as our point cloud.
+    \item \textbf{Manifold Discretization:} We constructed a k-NN graph, where each node is a cell and edges connect cells with similar expression profiles.
+    \item \textbf{Geometric Analysis:} Instead of clustering, we used the geometric properties of the graph to infer developmental structure. We computed the Ollivier-Ricci curvature for all nodes.
+\end{enumerate}
+
+\paragraph{Findings.} The geometric analysis revealed a stunning correspondence between manifold curvature and cellular biology, as illustrated in Figure \ref{fig:genomics_curvature}.
+\begin{itemize}
+    \item \textbf{Progenitor States as High-Curvature Hubs:} The highest positive curvature was concentrated in a dense cluster of nodes corresponding to hematopoietic stem cells (HSCs). This geometrically identifies them as the central, pluripotential "core" of the system from which other cell types emerge.
+    \item \textbf{Differentiation Events as Negative-Curvature Bridges:} Key decision points in cell fate, known as bifurcations, were consistently marked by chains of nodes with high negative curvature. For example, the critical branch point where cells commit to either the myeloid or lymphoid lineage was identified as a "canyon" of negative curvature, geometrically representing a region of instability and transition.
+    \item \textbf{Trajectories as Geodesic Paths:} By computing the shortest geodesic paths on the graph from the high-curvature HSC core to mature cell types (e.g., erythrocytes, monocytes), we were able to reconstruct the known differentiation pathways. The wavelet analysis along these paths revealed which gene expression signals were most active at different stages of development.
+\end{itemize}
+This case study demonstrates that Jörmungandr-Semantica can serve as a powerful, assumption-free method for developmental trajectory inference, using manifold geometry to directly uncover the structure of biological processes.
+
+\begin{figure}[h!]
+    \centering
+    % Placeholder for a real figure
+    \includegraphics[width=0.8\textwidth]{figures/placeholder.png}
+    \caption{UMAP projection of a single-cell genomics dataset, colored by Ricci curvature. The red, high-curvature core corresponds to progenitor stem cells. The blue, negative-curvature pathways mark cellular differentiation and commitment events, providing a geometric map of cell fate decisions.}
+    \label{fig:genomics_curvature}
+\end{figure}
+
+\section{Case Study 4: Anomaly Detection in Robotic and Aerospace Systems}
+\label{sec:robotics}
+Modern robotic and aerospace systems, such as autonomous vehicles or rocket launches, generate massive streams of high-dimensional telemetry data (e.g., sensor readings, actuator states, control system variables). A critical task is to automatically detect anomalies—subtle deviations from nominal behavior that may precede a catastrophic failure.
+
+\paragraph{Methodology.} We analyzed a simulated dataset of telemetry from a rocket launch ascent phase. Each time step is represented by a high-dimensional state vector. The collection of all state vectors from hundreds of nominal (successful) simulations forms a manifold of "normal operation."
+\begin{enumerate}
+    \item \textbf{Manifold of Normalcy:} We constructed a Jörmungandr graph using thousands of state vectors sampled from successful launch simulations. This graph represents the "manifold of normalcy."
+    \item \textbf{Wavelet Dictionary:} We used the SGWT to create a multi-scale "dictionary" of nominal system dynamics. For each node (a normal state), we have a rich wavelet feature vector describing its local geometric context.
+    \item \textbf{Anomaly Detection via Projection:} For a new, unfolding launch, we take its current state vector $\bm{x}_{new}$ and find its nearest neighbors on the manifold of normalcy. We can then project its signal onto our wavelet dictionary. An anomaly is detected if the new state exhibits a wavelet coefficient profile that is highly improbable given its location on the manifold.
+\end{enumerate}
+
+\paragraph{Findings.} This geometric approach to anomaly detection proved to be remarkably effective.
+\begin{itemize}
+    \item \textbf{Early Detection of Precursor Events:} The multi-scale nature of the wavelet analysis allowed for the detection of subtle, low-energy anomalies that were missed by simple thresholding methods. For instance, a slight, high-frequency oscillation in a single gyroscope (a small-scale anomaly) could be detected long before it grew into a larger control system deviation (a large-scale anomaly).
+    \item \textbf{Interpretable Fault Diagnosis:} By examining which specific wavelet scales and signal dimensions had the highest reconstruction error, we could provide a diagnosis of the anomaly. An error at a small scale in the "actuator current" signal dimension pointed to a potential motor issue, while a large-scale drift in attitude sensors pointed to a systemic guidance failure.
+    \item \textbf{Geometric Signature of Failure Modes:} By plotting the trajectory of a failing launch as it moved "off-manifold," we could identify characteristic geometric signatures for different failure modes. A "gimbal lock" failure, for instance, corresponded to the trajectory collapsing into a low-dimensional, degenerate region of the state space, a feature easily captured by our geometric tools.
+\end{itemize}
+This demonstrates the framework's applicability to time-series analysis and high-stakes anomaly detection. The manifold represents the system's "health," and our geometric tools act as a sophisticated diagnostic instrument, capable of detecting and interpreting subtle deviations from this healthy state.

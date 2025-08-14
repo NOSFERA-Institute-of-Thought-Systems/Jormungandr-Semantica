@@ -1,0 +1,69 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Belkin and Niyogi(2003)]{belkin2003laplacian}
+Mikhail Belkin and Partha Niyogi.
+\newblock Laplacian eigenmaps for dimensionality reduction and data
+  representation.
+\newblock \emph{Neural computation}, 15\penalty0 (6):\penalty0 1373--1396,
+  2003.
+
+\bibitem[Blei et~al.(2003)Blei, Ng, and Jordan]{blei2003latent}
+David~M Blei, Andrew~Y Ng, and Michael~I Jordan.
+\newblock Latent dirichlet allocation.
+\newblock \emph{Journal of machine Learning research}, 3\penalty0
+  (Jan):\penalty0 993--1022, 2003.
+
+\bibitem[Devlin et~al.(2018)Devlin, Chang, Lee, and Toutanova]{devlin2018bert}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
+\newblock Bert: Pre-training of deep bidirectional transformers for language
+  understanding.
+\newblock \emph{arXiv preprint arXiv:1810.04805}, 2018.
+
+\bibitem[Grootendorst(2022)]{grootendorst2022bertopic}
+Maarten Grootendorst.
+\newblock Bertopic: Neural backbone for topic modeling.
+\newblock \emph{Journal of Open Source Software}, 7\penalty0 (72):\penalty0
+  4361, 2022.
+
+\bibitem[Hammond et~al.(2011)Hammond, Vandergheynst, and
+  Gribonval]{hammond2011wavelets}
+David~K Hammond, Pierre Vandergheynst, and R{\'e}mi Gribonval.
+\newblock Wavelets on graphs via spectral graph theory.
+\newblock \emph{Applied and Computational Harmonic Analysis}, 30\penalty0
+  (2):\penalty0 129--150, 2011.
+
+\bibitem[McInnes et~al.(2018)McInnes, Healy, and Melville]{mcinnes2018umap}
+Leland McInnes, John Healy, and James Melville.
+\newblock Umap: Uniform manifold approximation and projection for dimension
+  reduction.
+\newblock \emph{Journal of Open Source Software}, 3\penalty0 (29):\penalty0
+  861, 2018.
+
+\bibitem[Ollivier(2009)]{ollivier2009ricci}
+Yann Ollivier.
+\newblock Ricci curvature of markov chains on metric spaces.
+\newblock \emph{Journal of Functional Analysis}, 256\penalty0 (3):\penalty0
+  810--864, 2009.
+
+\bibitem[Pennington et~al.(2014)Pennington, Socher, and
+  Manning]{pennington2014glove}
+Jeffrey Pennington, Richard Socher, and Christopher~D Manning.
+\newblock Glove: Global vectors for word representation.
+\newblock In \emph{Proceedings of the 2014 conference on empirical methods in
+  natural language processing (EMNLP)}, pages 1532--1543, 2014.
+
+\bibitem[Shuman et~al.(2013)Shuman, Narang, Frossard, Ortega, and
+  Vandergheynst]{shuman2013emerging}
+David~I Shuman, Sunil~K Narang, Pascal Frossard, Antonio Ortega, and Pierre
+  Vandergheynst.
+\newblock The emerging field of signal processing on graphs: Extending
+  high-dimensional data analysis to networks and other irregular domains.
+\newblock \emph{IEEE Signal Processing Magazine}, 30\penalty0 (3):\penalty0
+  83--98, 2013.
+
+\end{thebibliography}

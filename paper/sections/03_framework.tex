@@ -1,0 +1,75 @@
+\chapter{The Jörmungandr-Semantica Framework}
+\label{chap:framework}
+
+The theoretical principles outlined in the preceding chapters—stability and the geometry of clusterability—motivate the design of a practical, end-to-end computational framework. This chapter details the architecture of the Jörmungandr-Semantica pipeline, a modular system designed to transform an unstructured text corpus into a geometrically-informed, clustered representation.
+
+The framework is presented as a sequence of discrete stages, each with a specific function and a set of well-defined design choices. This modularity is intentional, facilitating rigorous ablation studies and allowing for future extension and improvement of each component. The full pipeline is summarized in Algorithm \ref{alg:full_pipeline} and detailed in the subsections below.
+
+\begin{algorithm}[h!]
+\caption{The Jörmungandr-Semantica Pipeline (Detailed)}
+\label{alg:full_pipeline}
+\begin{algorithmic}[1]
+\Require Corpus $\mathcal{D}$, embedding model $\mathcal{E}$, graph neighbors $k$, wavelet scales $\mathcal{T}=\{t_s\}$, reduction dimensions $d_{out}$, clustering algorithm $\mathcal{C}$.
+\Statex
+\Procedure{Jormungandr}{$\mathcal{D}, \mathcal{E}, k, \mathcal{T}, d_{out}, \mathcal{C}$}
+    \State \textbf{\textit{// Stage 1: Manifold Sampling}}
+    \State $X \gets \mathcal{E}(\mathcal{D})$ \Comment{Compute embeddings $X \in \R^{N \times D}$}
+    \Statex
+    \State \textbf{\textit{// Stage 2: Manifold Discretization}}
+    \State $W \gets \text{Build-kNN-Graph}(X, k)$ \Comment{Construct weighted adjacency matrix via Faiss}
+    \State $\Gcal \gets \text{PyGSP.Graph}(W)$ \Comment{Instantiate graph object}
+    \State $\Gcal.\text{compute\_fourier\_basis}()$ \Comment{Compute Laplacian eigendecomposition $\Lcal = U \Lambda U^T$}
+    \Statex
+    \State \textbf{\textit{// Stage 3: Multi-Scale Geometric Analysis}}
+    \State $Z \gets \emptyset$ \Comment{Initialize wavelet feature matrix}
+    \For{each scale $t_s \in \mathcal{T}$}
+        \State $\Psi_{t_s} \gets e^{-t_s \Lcal}$ \Comment{Construct wavelet operator for scale $t_s$}
+        \State $X_{wav}^{(s)} \gets \Psi_{t_s} X$ \Comment{Apply operator to all embedding dimensions}
+        \State $Z \gets Z \oplus X_{wav}^{(s)}$ \Comment{Concatenate features horizontally}
+    \EndFor
+    \Statex \Comment{$Z \in \R^{N \times (D \times S)}$ is the final multi-scale representation}
+    \Statex
+    \State \textbf{\textit{// Stage 4: Representation and Clustering}}
+    \State $\tilde{Z} \gets \text{UMAP}(Z, \text{n\_components}=d_{out})$ \Comment{Reduce dimensionality of wavelet features}
+    \State $\text{labels} \gets \mathcal{C}(\tilde{Z})$ \Comment{Apply clustering algorithm}
+    \State \Return labels
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\section{Stage 1: Manifold Sampling via Text Embedding}
+The first stage of the pipeline translates the symbolic domain of text into the geometric domain of vector spaces. Each document $d_i \in \mathcal{D}$ is mapped to a vector embedding $\bm{x}_i \in \R^D$ using a pre-trained sentence transformer model $\mathcal{E}$.
+
+\paragraph{Design Choice: Sentence Transformers.} We specifically choose models from the sentence-transformer family (e.g., `all-MiniLM-L6-v2`) over simpler models like bag-of-words or even standard BERT embeddings (e.g., CLS token). Sentence transformers are explicitly fine-tuned with a contrastive objective to produce semantically meaningful embeddings where the cosine similarity between vectors corresponds to their semantic relatedness. This property is crucial, as it ensures that the local geometric structure of the resulting point cloud $X$ is a high-fidelity representation of the semantic structure of the original corpus.
+
+\section{Stage 2: Manifold Discretization via Graph Construction}
+This stage operationalizes the Manifold Hypothesis by constructing a discrete graph $\Gcal$ that approximates the underlying text manifold.
+
+\paragraph{Design Choice: k-Nearest Neighbor Graph.} We employ a k-NN graph for its simplicity, efficiency, and theoretical grounding. Asymptotically, as the number of data points $N \to \infty$, the graph Laplacian of the k-NN graph converges to the Laplace-Beltrami operator of the underlying manifold \citep{belkin2003laplacian}. This provides a strong theoretical guarantee that our discrete representation is a faithful proxy for the continuous object we aim to study.
+
+\paragraph{Engineering Choice: Faiss Backend.} The construction of a k-NN graph on tens or hundreds of thousands of points is computationally prohibitive with naive algorithms. To ensure scalability, our framework utilizes a high-performance C++ backend powered by the Faiss library. This allows for approximate nearest neighbor search in sub-linear time, making the entire process feasible on a single commodity machine.
+
+\paragraph{Weighting Scheme.} The edges of the graph are weighted using an adaptive Gaussian kernel: $W_{ij} = \exp(-\norm{\bm{x}_i - \bm{x}_j}_2^2 / (\sigma_i \sigma_j))$, where $\sigma_i$ is the distance to the $k$-th neighbor of node $i$. This local scaling makes the affinity measure robust to variations in data density across the manifold, preventing nodes in sparse regions from becoming disconnected.
+
+\section{Stage 3: Multi-Scale Geometric Analysis via SGWT}
+This is the core analytical engine of the framework, where we move beyond the static geometry of the graph to a dynamic, multi-scale representation.
+
+\paragraph{Rationale.} A fixed-scale representation (e.g., using only the raw embeddings or a single Laplacian eigenmap) forces a choice of a single level of granularity. Thematic structures in text, however, are inherently hierarchical. The SGWT allows us to probe the manifold at multiple scales simultaneously.
+
+\paragraph{Design Choice: Heat Wavelets.} We specifically choose the heat kernel, $\Psi_t = e^{-t\Lcal}$, as our wavelet operator for several reasons:
+\begin{enumerate}
+    \item \textbf{Probabilistic Interpretation:} It is the solution operator to the heat diffusion equation on the graph. The wavelet coefficients at time $t$ represent the distribution of "information" from each node after diffusing for a short time, providing an intuitive physical analogue.
+    \item \textbf{Localization:} The heat kernel is well-localized in the vertex domain, meaning the wavelet coefficients at a node are primarily influenced by its local neighborhood, with the size of the neighborhood increasing with the scale $t$.
+    \item \textbf{Stability and Differentiability:} As proven in Theorem \ref{thm:stability_full}, the heat kernel is a smooth and stable function of the Laplacian, making the entire representation robust.
+\end{enumerate}
+
+\paragraph{Feature Concatenation.} After applying the wavelet operators $\{\Psi_{t_s}\}_{s \in \mathcal{T}}$ to the input embedding matrix $X$, we obtain a set of transformed feature matrices $\{X_{wav}^{(s)}\}$. These are concatenated to form the final feature matrix $Z = [X_{wav}^{(t_1)} | X_{wav}^{(t_2)} | \dots | X_{wav}^{(t_S)}]$. The resulting feature vector $\bm{z}_i$ for a document $i$ is a rich, multi-scale descriptor. It encodes not only the document's own semantic content but also how that content is situated within its local neighborhood at various levels of resolution.
+
+\section{Stage 4: Representation and Clustering}
+The final stage translates the high-dimensional wavelet representation into a low-dimensional embedding suitable for clustering.
+
+\paragraph{Design Choice: UMAP for Dimensionality Reduction.} The concatenated wavelet feature space $Z$ is very high-dimensional ($D \times S$). We require a dimensionality reduction technique that respects the non-linear, manifold structure we have worked so hard to capture. UMAP (Uniform Manifold Approximation and Projection) \citep{mcinnes2018umap} is the ideal choice. Unlike linear methods like PCA, UMAP is a manifold learning technique that seeks to preserve both the local and global topological structure of the data. It is a natural partner to our graph-based approach.
+
+\paragraph{Design Choice: Modular Clustering Backend.} The final clustering is performed on the low-dimensional UMAP embedding $\tilde{Z}$. The framework is agnostic to the choice of clustering algorithm $\mathcal{C}$. For tasks where the number of clusters is known a priori, we use KMeans for its speed and simplicity. For exploratory analysis where the number of clusters is unknown, we use HDBSCAN, a robust density-based algorithm. This modularity allows the user to tailor the final step to the specific task.
+
+By composing these stages, the Jörmungandr-Semantica framework provides a principled, transparent, and powerful system for moving from raw text to geometric insight. The subsequent chapters will detail the specific algorithmic innovations that enhance this core pipeline.

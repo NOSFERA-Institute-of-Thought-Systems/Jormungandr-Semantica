@@ -1,0 +1,46 @@
+% Preamble for the Jörmungandr-Semantica Paper
+\documentclass[11pt, letterpaper]{report} % CHANGED TO REPORT
+
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{natbib}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{xcolor}
+\usepackage{amsfonts}
+\usepackage{bm} % For bold math symbols
+\usepackage{multirow} % ADDED THIS PACKAGE
+
+% --- Theorem Environments ---
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+
+% --- Custom Math Commands ---
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\R}{\mathbb{R}} % Real numbers
+\newcommand{\E}{\mathbb{E}} % Expectation
+\newcommand{\Lcal}{\mathcal{L}} % Graph Laplacian
+\newcommand{\Gcal}{\mathcal{G}} % Graph
+\newcommand{\Vcal}{\mathcal{V}} % Vertex set
+\newcommand{\Ecal}{\mathcal{E}} % Edge set
+\newcommand{\Mcal}{\mathcal{M}} % Manifold
+\newcommand{\Xcal}{\mathcal{X}} % Data space
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert} % Norm
+\newcommand{\abs}[1]{\left\vert#1\right\rvert} % Absolute value
+
+\title{Jörmungandr-Semantica: A Geometric Framework for Unsupervised Representation Learning on Text Manifolds}
+\author{
+    Mohana Rangan Desigan \\ 
+    Independent Research \\
+    \texttt{mohan.rangan.research@gmail.com}
+}
+\date{\today}

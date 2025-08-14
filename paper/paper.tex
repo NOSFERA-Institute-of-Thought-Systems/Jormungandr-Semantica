@@ -1,0 +1,43 @@
+% The main LaTeX document for the Jörmungandr-Semantica Dissertation
+
+\input{preamble.tex}
+
+\begin{document}
+
+\maketitle
+\input{sections/00_abstract.tex}
+\tableofcontents
+\newpage
+
+% --- PART I: FOUNDATIONS ---
+\part{Foundations: Geometry, Signals, and Text}
+\input{sections/01_introduction.tex}
+\input{sections/02_preliminaries.tex}
+\input{sections/04_theory.tex}
+
+% --- PART II: THE JÖRMUNGANDR-SEMANTICA FRAMEWORK ---
+\part{Core Method: The Jörmungandr-Semantica Framework}
+\input{sections/03_framework.tex}
+\input{sections/03a_algorithmic_innovations.tex}
+\input{sections/03b_scalability.tex}
+
+% --- PART III: EMPIRICAL VALIDATION AND APPLICATIONS ---
+\part{Empirical Validation and Scientific Applications}
+\input{sections/05_empirical_validation.tex}
+\input{sections/06_analysis_and_discovery.tex}
+\input{sections/06a_cross_disciplinary_apps.tex} % CORRECTED FILENAME
+
+% --- PART IV: OUTLOOK ---
+\part{Outlook: Limitations and Future Horizons}
+\input{sections/07_conclusion.tex}
+
+% --- Bibliography and Appendix ---
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{bibliography/bibliography}
+
+\appendix
+\part*{Appendix}
+\input{sections/appendix_proofs.tex}
+
+\end{document}

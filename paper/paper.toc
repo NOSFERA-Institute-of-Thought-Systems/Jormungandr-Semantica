@@ -1,0 +1,80 @@
+\contentsline {part}{I\hspace {1em}Foundations: Geometry, Signals, and Text}{3}{part.1}%
+\contentsline {chapter}{\numberline {1}Introduction: A Geometric Reckoning for Unsupervised NLP}{4}{chapter.1}%
+\contentsline {subsection}{\numberline {1.0.1}A Unifying Central Theme}{5}{subsection.1.0.1}%
+\contentsline {subsection}{\numberline {1.0.2}Pillars of Contribution}{5}{subsection.1.0.2}%
+\contentsline {subsection}{\numberline {1.0.3}Dissertation Outline}{6}{subsection.1.0.3}%
+\contentsline {chapter}{\numberline {2}Mathematical Preliminaries}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Graphs as Discrete Manifolds}{7}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}The Graph Laplacian: A Discrete Laplace-Beltrami Operator}{7}{subsection.2.1.1}%
+\contentsline {section}{\numberline {2.2}Graph Signal Processing and Spectral Filtering}{8}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}The Spectral Graph Wavelet Transform (SGWT)}{8}{subsection.2.2.1}%
+\contentsline {section}{\numberline {2.3}Discrete Ricci Curvature}{9}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}The Wasserstein Distance}{9}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Ollivier-Ricci Curvature on Graphs}{9}{subsection.2.3.2}%
+\contentsline {chapter}{\numberline {3}Theoretical Foundations}{10}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Stability of the Graph Wavelet Operator}{10}{section.3.1}%
+\contentsline {section}{\numberline {3.2}A Geometric Theory of Clusterability}{11}{section.3.2}%
+\contentsline {part}{II\hspace {1em}Core Method: The Jörmungandr-Semantica Framework}{13}{part.2}%
+\contentsline {chapter}{\numberline {4}The Jörmungandr-Semantica Framework}{14}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Stage 1: Manifold Sampling via Text Embedding}{14}{section.4.1}%
+\contentsline {paragraph}{Design Choice: Sentence Transformers.}{14}{section*.2}%
+\contentsline {section}{\numberline {4.2}Stage 2: Manifold Discretization via Graph Construction}{14}{section.4.2}%
+\contentsline {paragraph}{Design Choice: k-Nearest Neighbor Graph.}{14}{section*.3}%
+\contentsline {paragraph}{Engineering Choice: Faiss Backend.}{15}{section*.4}%
+\contentsline {paragraph}{Weighting Scheme.}{15}{section*.5}%
+\contentsline {section}{\numberline {4.3}Stage 3: Multi-Scale Geometric Analysis via SGWT}{15}{section.4.3}%
+\contentsline {paragraph}{Rationale.}{16}{section*.6}%
+\contentsline {paragraph}{Design Choice: Heat Wavelets.}{16}{section*.7}%
+\contentsline {paragraph}{Feature Concatenation.}{16}{section*.8}%
+\contentsline {section}{\numberline {4.4}Stage 4: Representation and Clustering}{16}{section.4.4}%
+\contentsline {paragraph}{Design Choice: UMAP for Dimensionality Reduction.}{16}{section*.9}%
+\contentsline {paragraph}{Design Choice: Modular Clustering Backend.}{16}{section*.10}%
+\contentsline {chapter}{\numberline {5}Algorithmic Innovations}{17}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Adaptive Anisotropic Wavelets}{17}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Curvature-Regularized UMAP (CR-UMAP)}{18}{section.5.2}%
+\contentsline {chapter}{\numberline {6}Scalability: From Theory to Million-Node Graphs}{20}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Complexity Analysis of the Core Pipeline}{20}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Strategies for Scalable Geometric Analysis}{21}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Approximation via Chebyshev Polynomials}{21}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Graph Coarsening and Multi-Grid Solvers}{21}{subsection.6.2.2}%
+\contentsline {subsection}{\numberline {6.2.3}Architectural Vision for a Billion-Node System}{21}{subsection.6.2.3}%
+\contentsline {part}{III\hspace {1em}Empirical Validation and Scientific Applications}{23}{part.3}%
+\contentsline {chapter}{\numberline {7}Empirical Validation}{24}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Experimental Design}{24}{section.7.1}%
+\contentsline {paragraph}{Research Questions.}{24}{section*.11}%
+\contentsline {paragraph}{Datasets.}{24}{section*.12}%
+\contentsline {paragraph}{Models Under Comparison.}{25}{section*.13}%
+\contentsline {paragraph}{Evaluation Protocol and Metrics.}{25}{section*.14}%
+\contentsline {section}{\numberline {7.2}Results and Statistical Analysis}{25}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Discussion}{26}{subsection.7.2.1}%
+\contentsline {chapter}{\numberline {8}Analysis and Scientific Discovery with the Geometric Telescope}{27}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Ablation Study: Quantifying the Impact of Multi-Scale Wavelets}{27}{section.8.1}%
+\contentsline {paragraph}{Experimental Design.}{27}{section*.15}%
+\contentsline {paragraph}{Results.}{27}{section*.16}%
+\contentsline {paragraph}{Discussion.}{28}{section*.17}%
+\contentsline {section}{\numberline {8.2}Case Study 1: Mapping the Curvature of Human Knowledge}{28}{section.8.2}%
+\contentsline {paragraph}{Methodology.}{28}{section*.18}%
+\contentsline {paragraph}{Findings.}{28}{section*.19}%
+\contentsline {section}{\numberline {8.3}Case Study 2: A Longitudinal Analysis of Scientific Evolution}{29}{section.8.3}%
+\contentsline {paragraph}{Methodology.}{29}{section*.20}%
+\contentsline {paragraph}{Findings.}{29}{section*.21}%
+\contentsline {chapter}{\numberline {9}Cross-Disciplinary Generalization}{32}{chapter.9}%
+\contentsline {section}{\numberline {9.1}Case Study 3: Uncovering Cellular Trajectories in Single-Cell Genomics}{32}{section.9.1}%
+\contentsline {paragraph}{Methodology.}{32}{section*.22}%
+\contentsline {paragraph}{Findings.}{32}{section*.23}%
+\contentsline {section}{\numberline {9.2}Case Study 4: Anomaly Detection in Robotic and Aerospace Systems}{33}{section.9.2}%
+\contentsline {paragraph}{Methodology.}{34}{section*.24}%
+\contentsline {paragraph}{Findings.}{34}{section*.25}%
+\contentsline {part}{IV\hspace {1em}Outlook: Limitations and Future Horizons}{35}{part.4}%
+\contentsline {chapter}{\numberline {10}Conclusion: Towards a Geometric Theory of Intelligence}{36}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Synthesis of Contributions}{36}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Limitations and Honest Reflections}{37}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Future Horizons: A Research Program in Geometric Intelligence}{37}{section.10.3}%
+\contentsline {paragraph}{Dynamic Manifolds and Geometric Reinforcement Learning.}{37}{section*.26}%
+\contentsline {paragraph}{A Unifying Theory of Representation.}{37}{section*.27}%
+\contentsline {paragraph}{Machine Learning as a Formal Science.}{38}{section*.28}%
+\contentsline {chapter}{\numberline {A}Formal Proofs of Theoretical Results}{41}{appendix.A}%
+\contentsline {section}{\numberline {A.1}Proof of Theorem \ref {thm:stability_full}: Lipschitz Stability of the Heat Wavelet Operator}{41}{section.A.1}%
+\contentsline {section}{\numberline {A.2}Proof of Theorem \ref {thm:clusterability_discrete}: Discrete Curvature-Conductance Relationship}{42}{section.A.2}%
+\contentsline {paragraph}{Part 1: The Spectral Gap $\lambda _2$.}{43}{section*.31}%
+\contentsline {paragraph}{Part 2: Ollivier-Ricci Curvature $\kappa (e)$.}{43}{section*.32}%
