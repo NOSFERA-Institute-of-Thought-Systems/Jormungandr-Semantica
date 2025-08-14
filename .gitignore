@@ -47,3 +47,6 @@ venv.bak/
 .DS_Store
 # Data files
 data/
+
+wandb/paper/figures/*.png
+outputs/*.csv

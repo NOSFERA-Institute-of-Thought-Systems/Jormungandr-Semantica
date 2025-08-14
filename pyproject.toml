@@ -23,7 +23,8 @@ dependencies = [
     "hdbscan",
     "datasets",
     "sentence-transformers",
-    "pingouin"
+    "pingouin",
+    "GraphRicciCurvature>=0.5.2"
 ]
 
 [tool.scikit-build]
