@@ -28,3 +28,5 @@ dependencies:
   - pip:
       - bertopic
       - hdbscan
+      - datasets
+      - sentence-transformers

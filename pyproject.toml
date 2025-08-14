@@ -20,7 +20,9 @@ dependencies = [
     "torch",
     "GitPython",
     "bertopic",
-    "hdbscan"
+    "hdbscan",
+    "datasets",
+    "sentence-transformers"
 ]
 
 [tool.scikit-build]
