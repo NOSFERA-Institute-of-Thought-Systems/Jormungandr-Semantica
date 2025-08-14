@@ -18,7 +18,9 @@ dependencies = [
     "faiss-cpu",
     "wandb",
     "torch",
-    "GitPython"
+    "GitPython",
+    "bertopic",
+    "hdbscan"
 ]
 
 [tool.scikit-build]

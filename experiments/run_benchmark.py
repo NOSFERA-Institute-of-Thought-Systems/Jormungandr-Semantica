@@ -10,6 +10,8 @@ import jormungandr_semantica as js
 import numpy as np
 import torch
 import wandb
+from bertopic import BERTopic
+from hdbscan import HDBSCAN
 
 
 def set_seed(seed: int):
@@ -17,7 +19,6 @@ def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # If using CUDA, this is also needed
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     print(f"Global random seed set to {seed}")
@@ -36,15 +37,12 @@ def run_experiment(args):
     """
     Main function to run a single, fully-reproducible experiment.
     """
-    # 1. Set seed for determinism
     set_seed(args.seed)
 
-    # 2. Setup run configuration for logging
-    config = vars(args)  # Convert argparse namespace to a dictionary
+    config = vars(args)
     config["git_hash"] = get_git_hash()
     config["run_timestamp_utc"] = datetime.utcnow().isoformat()
 
-    # 3. Initialize MLOps tracking
     run = wandb.init(
         project="Jormungandr-Semantica",
         job_type="benchmark",
@@ -52,32 +50,57 @@ def run_experiment(args):
     )
     print(f"W&B Run URL: {run.url}")
 
-    # --- Placeholder for Real Experiment Logic ---
-    # In the future, this section will load data, run our pipeline, etc.
-    # For now, we simulate an experiment to test the harness.
-    print(f"\nSimulating experiment for dataset: {args.dataset} with k={args.k}")
+    # --- Placeholder for Data Loading ---
+    # In a real run, this would load text data and pre-computed embeddings
+    print(f"Simulating data loading for: {args.dataset}")
+    mock_embeddings = np.random.rand(500, 384) # e.g., from sentence-transformers
+    mock_docs = ["doc_" + str(i) for i in range(500)]
+    # ------------------------------------
+
+    print(f"\nRunning experiment with method: {args.method}")
     start_time = time.time()
-    # Simulate building the graph
-    mock_data = np.random.rand(500, 128).astype('float32')
-    # We pass the seed to UMAP/KMeans etc. via their 'random_state' params
-    # For our C++ backend, its randomness is controlled by np.random.seed()
-    neighbors, distances = js.build_faiss_knn_graph(mock_data, k=args.k)
-    # Simulate a result
-    mock_ari_score = 0.75 + (np.random.rand() * 0.1) # A mock result
+
+    # --- Method Dispatcher ---
+    # This block selects which algorithm to run based on the --method argument.
+    if args.method == "jormungandr":
+        # This is where our full pipeline will go.
+        # For now, we simulate it.
+        _ = js.build_faiss_knn_graph(mock_embeddings.astype('float32'), k=args.k)
+        # In the future: build graph -> compute wavelets -> UMAP -> cluster
+        mock_ari_score = 0.75 + (np.random.rand() * 0.1) # Our method's mock score
+        print("Jörmungandr pipeline finished.")
+
+    elif args.method == "bertopic":
+        # BERTopic needs a clustering model. We use HDBSCAN for a fair comparison.
+        hdbscan_model = HDBSCAN(min_cluster_size=15, metric='euclidean', 
+                                prediction_data=True)
+        topic_model = BERTopic(hdbscan_model=hdbscan_model, verbose=False)
+        # BERTopic is deterministic if the underlying models are.
+        _, _ = topic_model.fit_transform(mock_docs, mock_embeddings)
+        mock_ari_score = 0.70 + (np.random.rand() * 0.1) # BERTopic's mock score
+        print("BERTopic pipeline finished.")
+
+    elif args.method == "hdbscan":
+        # Just run HDBSCAN on the embeddings directly.
+        clusterer = HDBSCAN(min_cluster_size=15)
+        _ = clusterer.fit_predict(mock_embeddings)
+        mock_ari_score = 0.65 + (np.random.rand() * 0.1) # HDBSCAN's mock score
+        print("HDBSCAN pipeline finished.")
+        
+    else:
+        raise ValueError(f"Unknown method: {args.method}")
+    # -------------------------
+
     end_time = time.time()
     duration_seconds = end_time - start_time
-    print(f"Simulation finished in {duration_seconds:.2f} seconds.")
+    print(f"Method finished in {duration_seconds:.2f} seconds.")
     print(f"Mock ARI Score: {mock_ari_score:.4f}")
-    # ---------------------------------------------
 
-    # 4. Log metrics to W&B
     wandb.log({
         "ARI": mock_ari_score,
         "runtime_seconds": duration_seconds,
     })
 
-    # 5. Save local manifest for this run
-    # Create a unique output directory for this specific run
     output_dir = Path(f"outputs/{run.name}-{run.id}")
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -86,21 +109,21 @@ def run_experiment(args):
         json.dump(config, f, indent=4)
     print(f"Run manifest saved to: {manifest_path}")
 
-    # 6. Finish MLOps run
     run.finish()
 
 
 def main():
-    """Parses command-line arguments and launches the experiment."""
     parser = argparse.ArgumentParser(
         description="Run a deterministic benchmark experiment for Jörmungandr-Semantica."
     )
-    # Core arguments for reproducibility and identification
-    parser.add_argument("--seed", type=int, required=True, help="Random seed for all operations.")
-    parser.add_argument("--dataset", type=str, required=True, help="Name of the dataset to use (e.g., '20newsgroups').")
-    
-    # Example hyperparameter for our pipeline
-    parser.add_argument("--k", type=int, default=15, help="Number of nearest neighbors for the graph.")
+    # New argument to select the method
+    parser.add_argument("--method", type=str, required=True, 
+                        choices=["jormungandr", "bertopic", "hdbscan"],
+                        help="The clustering method to run.")
+                        
+    parser.add_argument("--seed", type=int, required=True, help="Random seed.")
+    parser.add_argument("--dataset", type=str, required=True, help="Dataset name.")
+    parser.add_argument("--k", type=int, default=15, help="k-NN graph neighbors (for Jörmungandr).")
     
     args = parser.parse_args()
     run_experiment(args)

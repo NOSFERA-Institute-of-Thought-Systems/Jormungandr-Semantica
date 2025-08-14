@@ -25,3 +25,6 @@ dependencies:
   - wandb
   - pytorch
   - gitpython
+  - pip:
+      - bertopic
+      - hdbscan
