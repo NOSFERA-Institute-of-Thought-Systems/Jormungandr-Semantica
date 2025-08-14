@@ -1,0 +1,24 @@
+name: jormungandr
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # --- Core Build Environment ---
+  - python=3.10
+  - pip
+  - cmake
+  # Linux compilers provided by Conda
+  - c-compiler
+  - cxx-compiler
+
+  # --- C++ Libraries ---
+  - faiss-cpu
+  # The LLVM OpenMP is needed for Faiss on Linux
+  - llvm-openmp
+
+  # --- Python Build & Runtime ---
+  - pybind11
+  - scikit-build-core
+  - numpy
+  - scikit-learn
+  - pygsp

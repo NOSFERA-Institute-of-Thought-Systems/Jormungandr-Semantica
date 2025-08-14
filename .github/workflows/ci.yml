@@ -1,0 +1,34 @@
+name: Build and Test CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: "3.10"
+          environment-file: environment.yml
+          activate-environment: jormungandr
+
+      - name: Build and install project
+        shell: bash -l {0}
+        run: |
+          pip install . --no-cache-dir
+
+      - name: Run verification scripts
+        shell: bash -l {0}
+        run: |
+          python scripts/verify_install.py
+          python scripts/verify_wavelets.py
