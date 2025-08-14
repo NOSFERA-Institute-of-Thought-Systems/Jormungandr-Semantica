@@ -16,7 +16,9 @@ dependencies = [
     "scikit-learn",
     "pygsp",
     "faiss-cpu",
-    "wandb"
+    "wandb",
+    "torch",
+    "GitPython"
 ]
 
 [tool.scikit-build]
