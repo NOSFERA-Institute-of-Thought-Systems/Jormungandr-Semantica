@@ -28,6 +28,11 @@ jobs:
           pip install . --no-cache-dir
 
       - name: Run verification scripts
+        # --- THIS IS THE CRITICAL FIX ---
+        # We define an environment variable for this step.
+        # The `secrets.WANDB_API_KEY` syntax securely accesses the secret we created.
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         shell: bash -l {0}
         run: |
           python scripts/verify_install.py
