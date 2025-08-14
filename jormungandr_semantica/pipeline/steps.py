@@ -1,8 +1,11 @@
+# jormungandr_semantica/pipeline/steps.py
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Tuple
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+from scipy.sparse import diags
 from sklearn.preprocessing import normalize
 import networkx as nx
 import jormungandr_semantica as js
@@ -57,7 +60,6 @@ class FaissGraphConstructor(GraphConstructor):
     """Constructs a k-NN graph using the C++/Faiss backend."""
     def run(self, data: PipelineData) -> PipelineData:
         print("Step: Building k-NN graph with Faiss (sparse)...")
-        # Faiss C++ backend expects float32 for performance.
         embeddings_f32 = data.embeddings.astype(np.float32)
         n_points, k = embeddings_f32.shape[0], self.config['k']
         
@@ -66,12 +68,7 @@ class FaissGraphConstructor(GraphConstructor):
         rows = np.repeat(np.arange(n_points), k)
         cols = neighbors.flatten()
         
-        # --- THE FINAL, CORRECT FIX ---
-        # 1. Cast distances to float64 *before* computing weights. This ensures
-        #    the resulting weights array is float64.
-        # 2. Construct the sparse matrix with this float64 weights array.
-        # 3. The PyGSP Graph object will then inherit this double-precision dtype,
-        #    ensuring numerical stability for the sparse eigensolver.
+        # Ensure weights are float64 for numerical stability in eigensolvers.
         sigma = np.mean(distances[:, -1])
         weights_f64 = np.exp(-distances.flatten().astype(np.float64) / (sigma + 1e-8))
         
@@ -82,12 +79,11 @@ class FaissGraphConstructor(GraphConstructor):
         
         adj = adj.maximum(adj.T) # Symmetrize
         
-        # Clean up small weights
         epsilon = 1e-9
         adj.data[adj.data < epsilon] = 0
         adj.eliminate_zeros()
         
-        # Handle disconnected components by taking the largest one
+        # Handle disconnected components by taking the largest one.
         n_components, labels = connected_components(csgraph=adj, directed=False, return_labels=True)
         
         if n_components > 1:
@@ -96,18 +92,18 @@ class FaissGraphConstructor(GraphConstructor):
             largest_component_label = unique[np.argmax(counts)]
             largest_idx = np.where(labels == largest_component_label)[0]
             
-            # Filter all data to match the subgraph
             data.docs = [data.docs[i] for i in largest_idx]
             data.embeddings = data.embeddings[largest_idx]
             data.labels_true = data.labels_true[largest_idx]
             adj = adj[largest_idx, :][:, largest_idx]
 
-        adj.setdiag(0) # Remove self-loops
+        adj.setdiag(0)
         
-        # PyGSP Graph will inherit the float64 dtype from the sparse matrix `adj`.
+        # Create the graph object. The Laplacian will be computed later
+        # by the wavelet step, which now contains the safe normalization logic.
         data.graph = graphs.Graph(W=adj)
         
-        print(f"Graph constructed. Adjacency matrix (W) dtype: {data.graph.W.dtype}")
+        print(f"Graph constructed. Adjacency (W) dtype: {data.graph.W.dtype}")
         
         return data
 
@@ -117,7 +113,6 @@ class DirectRepresentationBuilder(RepresentationBuilder):
         print("Step: Using direct embeddings as representation.")
         data.representation = data.embeddings
         return data
-
 
 class WaveletRepresentationBuilder(RepresentationBuilder):
     """Builds a multi-scale representation using the SGWT."""
@@ -133,10 +128,6 @@ class WaveletRepresentationBuilder(RepresentationBuilder):
         n_nodes, n_features, n_scales = coeffs.shape
         representation = coeffs.reshape((n_nodes, n_features * n_scales))
         
-        # --- FINAL POLISH ---
-        # Sanitize the representation to remove any non-finite values (NaN, inf)
-        # that can be produced by the wavelet transform in edge cases.
-        # This prevents numerical warnings in downstream UMAP/KMeans.
         if not np.all(np.isfinite(representation)):
             print("[WARNING] Non-finite values found in wavelet representation. Sanitizing...")
             representation = np.nan_to_num(representation, nan=0.0, posinf=0.0, neginf=0.0)
@@ -158,13 +149,13 @@ class ACMWRepresentationBuilder(RepresentationBuilder):
         n_nodes, n_features, n_scales = coeffs.shape
         representation = coeffs.reshape((n_nodes, n_features * n_scales))
 
-        # --- FINAL POLISH (also applied here for consistency) ---
         if not np.all(np.isfinite(representation)):
             print("[WARNING] Non-finite values found in ACMW representation. Sanitizing...")
             representation = np.nan_to_num(representation, nan=0.0, posinf=0.0, neginf=0.0)
 
         data.representation = representation
         return data
+
 class UMAPReducer(Reducer):
     """Reduces dimensionality using UMAP."""
     def run(self, data: PipelineData) -> PipelineData:
@@ -172,9 +163,8 @@ class UMAPReducer(Reducer):
         reducer = UMAP(
             n_components=self.config['umap_dims'], 
             random_state=self.config['seed'],
-            n_jobs=1 # Enforce single-threaded for stability
+            n_jobs=1
         )
-        # Normalize the final embedding for stable clustering
         data.reduced_representation = normalize(reducer.fit_transform(data.representation))
         return data
 
