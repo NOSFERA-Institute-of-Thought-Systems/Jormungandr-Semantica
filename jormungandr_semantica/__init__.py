@@ -1,18 +1,17 @@
 """
 Jörmungandr-Semantica
-
-A framework for geometric deep learning in semantic analysis.
+...
 """
-
 # Import from the C++ backend
 from ._core import build_faiss_knn_graph
 
 # Import from the wavelets module
 from .wavelets import compute_heat_wavelets, compute_acmw_wavelets
+from .cr_umap import curvature_regularized_umap
 
-# Update the public API
 __all__ = [
     "build_faiss_knn_graph",
     "compute_heat_wavelets",
-    "compute_acmw_wavelets", # <-- ADD THIS LINE
+    "compute_acmw_wavelets",
+    "curvature_regularized_umap",
 ]
