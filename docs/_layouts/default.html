@@ -1,0 +1,42 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title }} | {{ site.title }}</title>
+    <!-- Pico.css for instant, beautiful styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
+    <style>
+      /* A few minor style overrides for better readability */
+      main { padding-top: 1rem; padding-bottom: 2rem; }
+      h1, h2, h3 { margin-top: 2.5rem; }
+      footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--pico-muted-border-color); }
+      table { width: 100%; }
+      blockquote { font-style: italic; }
+      nav a { text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="container">
+      <nav>
+        <ul>
+          <li><strong>{{ site.title }}</strong></li>
+        </ul>
+        <ul>
+          <li><a href="{{ '/' | relative_url }}">Home</a></li>
+          <li><a href="{{ '/dashboard/' | relative_url }}">Dashboard</a></li>
+          <li><a href="https://github.com/{{ site.repository }}" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="container">
+      <h1>{{ page.title }}</h1>
+      <hr>
+      {{ content }}
+    </main>
+    <footer class="container">
+      <small>&copy; 2025 Jörmungandr-Semantica Project. Licensed under MIT.</small>
+    </footer>
+  </body>
+</html>

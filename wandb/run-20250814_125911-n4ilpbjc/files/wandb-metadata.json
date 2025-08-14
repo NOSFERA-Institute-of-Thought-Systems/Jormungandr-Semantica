@@ -1,0 +1,23 @@
+{
+  "os":  "macOS-15.6-arm64-arm-64bit",
+  "python":  "CPython 3.10.18",
+  "startedAt":  "2025-08-14T03:59:11.776043Z",
+  "args":  [
+    "--dataset",
+    "20newsgroups",
+    "--seed",
+    "42"
+  ],
+  "program":  "/Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica/experiments/run_benchmark.py",
+  "codePath":  "experiments/run_benchmark.py",
+  "codePathLocal":  "experiments/run_benchmark.py",
+  "git":  {
+    "remote":  "https://github.com/NOSFERA-Institute-of-Thought-Systems/Jormungandr-Semantica.git",
+    "commit":  "0078dfc19c638993433b4ef624cea4bd42b33610"
+  },
+  "email":  "mohan.rangan.research@gmail.com",
+  "root":  "/Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica",
+  "host":  "Mohanas-Mac-mini.local",
+  "executable":  "/opt/homebrew/Caskroom/miniforge/base/envs/principia/bin/python",
+  "writerId":  "usxqkpa2ie9cy3mei659dvm2xjbrcmmw"
+}

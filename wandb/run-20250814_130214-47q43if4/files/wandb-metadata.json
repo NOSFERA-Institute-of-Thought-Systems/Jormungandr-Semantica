@@ -1,0 +1,44 @@
+{
+  "os":  "macOS-15.6-arm64-arm-64bit",
+  "python":  "CPython 3.10.18",
+  "startedAt":  "2025-08-14T04:02:14.649580Z",
+  "args":  [
+    "--method",
+    "bertopic",
+    "--dataset",
+    "20newsgroups",
+    "--seed",
+    "42"
+  ],
+  "program":  "/Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica/experiments/run_benchmark.py",
+  "codePath":  "experiments/run_benchmark.py",
+  "codePathLocal":  "experiments/run_benchmark.py",
+  "git":  {
+    "remote":  "https://github.com/NOSFERA-Institute-of-Thought-Systems/Jormungandr-Semantica.git",
+    "commit":  "f79709434658e41a76b218753d42801589101987"
+  },
+  "email":  "mohan.rangan.research@gmail.com",
+  "root":  "/Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica",
+  "host":  "Mohanas-Mac-mini.local",
+  "executable":  "/opt/homebrew/Caskroom/miniforge/base/envs/principia/bin/python",
+  "cpu_count":  10,
+  "cpu_count_logical":  10,
+  "disk":  {
+    "/":  {
+      "total":  "245107195904",
+      "used":  "105682956288"
+    }
+  },
+  "memory":  {
+    "total":  "17179869184"
+  },
+  "apple":  {
+    "name":  "Apple M4",
+    "ecpuCores":  6,
+    "pcpuCores":  4,
+    "gpuCores":  10,
+    "memoryGb":  16,
+    "ramTotalBytes":  "17179869184"
+  },
+  "writerId":  "blg0dawzmmgij0j93q0ctqce2l8y49ll"
+}

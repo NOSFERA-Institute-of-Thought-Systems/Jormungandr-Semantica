@@ -22,7 +22,8 @@ dependencies = [
     "bertopic",
     "hdbscan",
     "datasets",
-    "sentence-transformers"
+    "sentence-transformers",
+    "pingouin"
 ]
 
 [tool.scikit-build]

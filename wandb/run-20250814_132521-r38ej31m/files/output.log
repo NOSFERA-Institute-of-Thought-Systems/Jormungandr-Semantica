@@ -1,0 +1,8 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/r38ej31m
+Simulating data loading for: 20newsgroups
+
+Running experiment with method: hdbscan
+HDBSCAN pipeline finished.
+Method finished in 0.07 seconds.
+Mock ARI Score: 0.7361
+Run manifest saved to: outputs/breezy-deluge-32-r38ej31m/manifest.json

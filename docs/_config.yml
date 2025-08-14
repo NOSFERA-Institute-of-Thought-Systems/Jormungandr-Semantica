@@ -1,0 +1,16 @@
+# In docs/_config.yml
+title: Jörmungandr-Semantica
+description: A framework for geometric deep learning in semantic analysis, built on first principles.
+repository: "your-username/Jormungandr-Semantica" # Replace with your GitHub username
+
+# Deployment settings for GitHub Pages
+baseurl: "/Jormungandr-Semantica"
+url: "https://your-username.github.io"
+
+# Build settings
+markdown: kramdown
+
+# Exclude files from the final site build
+exclude:
+  - Gemfile
+  - Gemfile.lock```

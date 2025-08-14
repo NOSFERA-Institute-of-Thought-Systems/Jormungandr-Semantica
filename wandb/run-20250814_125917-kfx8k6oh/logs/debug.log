@@ -1,0 +1,28 @@
+2025-08-14 12:59:17,864 INFO    MainThread:16878 [wandb_setup.py:_flush():80] Current SDK version is 0.21.1
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_setup.py:_flush():80] Configure stats pid to 16878
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_setup.py:_flush():80] Loading settings from /Users/mohanarangandesigan/.config/wandb/settings
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_setup.py:_flush():80] Loading settings from /Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica/wandb/settings
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_setup.py:_flush():80] Loading settings from environment variables
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_init.py:setup_run_log_directory():703] Logging user logs to /Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica/wandb/run-20250814_125917-kfx8k6oh/logs/debug.log
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_init.py:setup_run_log_directory():704] Logging internal logs to /Users/mohanarangandesigan/Developer/GitHub/Jormungandr-Semantica/wandb/run-20250814_125917-kfx8k6oh/logs/debug-internal.log
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_init.py:init():830] calling init triggers
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_init.py:init():835] wandb.init called with sweep_config: {}
+config: {'seed': 1337, 'dataset': '20newsgroups', 'k': 15, 'git_hash': '0078dfc19c638993433b4ef624cea4bd42b33610', 'run_timestamp_utc': '2025-08-14T03:59:17.480799', '_wandb': {}}
+2025-08-14 12:59:17,865 INFO    MainThread:16878 [wandb_init.py:init():871] starting backend
+2025-08-14 12:59:18,093 INFO    MainThread:16878 [wandb_init.py:init():874] sending inform_init request
+2025-08-14 12:59:18,132 INFO    MainThread:16878 [wandb_init.py:init():882] backend started and connected
+2025-08-14 12:59:18,134 INFO    MainThread:16878 [wandb_init.py:init():953] updated telemetry
+2025-08-14 12:59:18,149 INFO    MainThread:16878 [wandb_init.py:init():977] communicating run to backend with 90.0 second timeout
+2025-08-14 12:59:18,713 INFO    MainThread:16878 [wandb_init.py:init():1029] starting run threads in backend
+2025-08-14 12:59:18,733 INFO    MainThread:16878 [wandb_run.py:_console_start():2494] atexit reg
+2025-08-14 12:59:18,733 INFO    MainThread:16878 [wandb_run.py:_redirect():2342] redirect: wrap_raw
+2025-08-14 12:59:18,733 INFO    MainThread:16878 [wandb_run.py:_redirect():2411] Wrapping output streams.
+2025-08-14 12:59:18,733 INFO    MainThread:16878 [wandb_run.py:_redirect():2434] Redirects installed.
+2025-08-14 12:59:18,734 INFO    MainThread:16878 [wandb_init.py:init():1075] run started, returning control to user process
+2025-08-14 12:59:18,735 INFO    MainThread:16878 [wandb_run.py:_finish():2260] finishing run mohan-rangan-research-nosfera/Jormungandr-Semantica/kfx8k6oh
+2025-08-14 12:59:18,736 INFO    MainThread:16878 [wandb_run.py:_atexit_cleanup():2459] got exitcode: 0
+2025-08-14 12:59:18,736 INFO    MainThread:16878 [wandb_run.py:_restore():2441] restore
+2025-08-14 12:59:18,736 INFO    MainThread:16878 [wandb_run.py:_restore():2447] restore done
+2025-08-14 12:59:19,956 INFO    MainThread:16878 [wandb_run.py:_footer_history_summary_info():3895] rendering history
+2025-08-14 12:59:19,956 INFO    MainThread:16878 [wandb_run.py:_footer_history_summary_info():3927] rendering summary
+2025-08-14 12:59:19,956 INFO    MainThread:16878 [wandb_run.py:_footer_sync_info():3856] logging synced files

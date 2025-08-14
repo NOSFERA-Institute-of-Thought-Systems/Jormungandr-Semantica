@@ -1,0 +1,3 @@
+---
+BUNDLE_BUILD__BIGDECIMAL: "--with-openssl-dir=/opt/homebrew/opt/openssl@3"
+BUNDLE_BUILD__JSON: "--with-openssl-dir=/opt/homebrew/opt/openssl@3"

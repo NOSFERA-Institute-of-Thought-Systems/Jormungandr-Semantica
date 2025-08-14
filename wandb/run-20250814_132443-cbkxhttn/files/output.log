@@ -1,0 +1,8 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/cbkxhttn
+Simulating data loading for: 20newsgroups
+
+Running experiment with method: bertopic
+BERTopic pipeline finished.
+Method finished in 2.95 seconds.
+Mock ARI Score: 0.7707
+Run manifest saved to: outputs/worldly-sun-29-cbkxhttn/manifest.json

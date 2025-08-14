@@ -1,0 +1,8 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/kaqp087q
+Simulating data loading for: agnews
+
+Running experiment with method: hdbscan
+HDBSCAN pipeline finished.
+Method finished in 0.07 seconds.
+Mock ARI Score: 0.7266
+Run manifest saved to: outputs/rich-snowflake-70-kaqp087q/manifest.json

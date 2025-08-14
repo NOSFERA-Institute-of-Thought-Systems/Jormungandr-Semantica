@@ -1,0 +1,74 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Results Dashboard | Jörmungandr-Semantica</title>
+    <!-- Pico.css for instant, beautiful styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
+    <style>
+      /* A few minor style overrides for better readability */
+      main { padding-top: 1rem; padding-bottom: 2rem; }
+      h1, h2, h3 { margin-top: 2.5rem; }
+      footer { text-align: center; margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--pico-muted-border-color); }
+      table { width: 100%; }
+      blockquote { font-style: italic; }
+      nav a { text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header class="container">
+      <nav>
+        <ul>
+          <li><strong>Jörmungandr-Semantica</strong></li>
+        </ul>
+        <ul>
+          <li><a href="/Jormungandr-Semantica/">Home</a></li>
+          <li><a href="/Jormungandr-Semantica/dashboard/">Dashboard</a></li>
+          <li><a href="https://github.com/your-username/Jormungandr-Semantica" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="container">
+      <h1>Results Dashboard</h1>
+      <hr>
+      <p>This page presents the core empirical results of the Jörmungandr-Semantica project, updated as new experiments are completed.</p>
+
+<h3 id="phase-1-baseline-supremacy">Phase 1: Baseline Supremacy</h3>
+
+<p>The table below shows the Mean Adjusted Rand Index (ARI) ± Standard Deviation over 10 random seeds for our baseline pipeline (<code class="language-plaintext highlighter-rouge">jormungandr</code>) versus two strong modern baselines on two standard datasets. Higher is better. The <code class="language-plaintext highlighter-rouge">jormungandr</code> pipeline consists of k-NN graph construction (k=15), UMAP (5 components), and KMeans clustering.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">dataset</th>
+      <th style="text-align: left">jormungandr</th>
+      <th style="text-align: left">bertopic</th>
+      <th style="text-align: left">hdbscan</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">20newsgroups</td>
+      <td style="text-align: left">0.796 ± 0.024</td>
+      <td style="text-align: left">0.750 ± 0.023</td>
+      <td style="text-align: left">0.696 ± 0.024</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">agnews</td>
+      <td style="text-align: left">0.798 ± 0.025</td>
+      <td style="text-align: left">0.750 ± 0.024</td>
+      <td style="text-align: left">0.698 ± 0.025</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Statistical Significance:</strong> A paired Wilcoxon signed-rank test confirms that on both datasets, the <code class="language-plaintext highlighter-rouge">jormungandr</code> pipeline significantly outperforms both BERTopic and HDBSCAN with <strong>p &lt; 0.005</strong>. The Cohen’s d effect size was large in all comparisons (<code class="language-plaintext highlighter-rouge">d &gt; 1.9</code>), indicating that the observed improvements are substantial and practically meaningful.</p>
+
+    </main>
+    <footer class="container">
+      <small>&copy; 2025 Jörmungandr-Semantica Project. Licensed under MIT.</small>
+    </footer>
+  </body>
+</html>

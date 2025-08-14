@@ -1,0 +1,8 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/qk6rtjfz
+Simulating data loading for: 20newsgroups
+
+Running experiment with method: hdbscan
+HDBSCAN pipeline finished.
+Method finished in 0.08 seconds.
+Mock ARI Score: 0.6928
+Run manifest saved to: outputs/devoted-shadow-34-qk6rtjfz/manifest.json

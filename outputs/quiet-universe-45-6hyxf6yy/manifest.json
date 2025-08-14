@@ -1,0 +1,8 @@
+{
+    "method": "jormungandr",
+    "seed": 46,
+    "dataset": "agnews",
+    "k": 15,
+    "git_hash": "25e066553e7816e9d3577c5422516cff3a538f1f",
+    "run_timestamp_utc": "2025-08-14T04:27:45.880999"
+}

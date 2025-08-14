@@ -1,0 +1,7 @@
+{
+    "seed": 42,
+    "dataset": "20newsgroups",
+    "k": 15,
+    "git_hash": "0078dfc19c638993433b4ef624cea4bd42b33610",
+    "run_timestamp_utc": "2025-08-14T03:59:11.367600"
+}

@@ -1,0 +1,8 @@
+{
+    "method": "jormungandr",
+    "seed": 42,
+    "dataset": "20newsgroups",
+    "k": 15,
+    "git_hash": "f79709434658e41a76b218753d42801589101987",
+    "run_timestamp_utc": "2025-08-14T04:01:57.212441"
+}

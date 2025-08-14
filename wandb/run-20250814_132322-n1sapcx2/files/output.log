@@ -1,0 +1,8 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/n1sapcx2
+Simulating data loading for: 20newsgroups
+
+Running experiment with method: bertopic
+BERTopic pipeline finished.
+Method finished in 3.06 seconds.
+Mock ARI Score: 0.7180
+Run manifest saved to: outputs/helpful-music-23-n1sapcx2/manifest.json
