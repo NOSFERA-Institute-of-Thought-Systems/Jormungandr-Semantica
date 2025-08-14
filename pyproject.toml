@@ -15,7 +15,8 @@ dependencies = [
     "numpy",
     "scikit-learn",
     "pygsp",
-    "faiss-cpu"
+    "faiss-cpu",
+    "wandb"
 ]
 
 [tool.scikit-build]
