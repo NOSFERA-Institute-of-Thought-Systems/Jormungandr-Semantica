@@ -4,7 +4,7 @@ project(PrincipiaCore LANGUAGES CXX)
 # Find Pybind11.
 find_package(pybind11 REQUIRED)
 
-# Find Faiss. We need this for the include directories.
+# Find Faiss.
 find_package(Faiss REQUIRED)
 
 # Create our Python module.
@@ -20,16 +20,14 @@ target_include_directories(_core PRIVATE ${FAISS_INCLUDE_DIRS})
 target_compile_options(_core PRIVATE -fopenmp)
 
 # Link against the Faiss and OpenMP libraries by name.
-# The linker finds them because of the conda environment.
 target_link_libraries(_core PRIVATE faiss omp)
 
-# --- THE FINAL, CORRECT RPATH SOLUTION FOR MACOS ---
-# This tells our compiled library to look for dependencies (like libfaiss.dylib)
-# in the directory located at "../lib" relative to its own location.
+# Use the correct relative RPATH for macOS.
 set_target_properties(_core PROPERTIES
     INSTALL_RPATH "@loader_path/../lib"
 )
 
-# Install our compiled module into the final Python package.
+# --- RENAMED ---
+# Install our compiled module into the new package directory.
 install(TARGETS _core
-        DESTINATION principia_semantica)
+        DESTINATION jormungandr_semantica)

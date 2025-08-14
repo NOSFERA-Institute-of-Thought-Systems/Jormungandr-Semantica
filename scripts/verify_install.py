@@ -1,12 +1,13 @@
 # scripts/verify_install.py
 import numpy as np
-import principia_semantica
+# --- RENAMED ---
+import jormungandr_semantica
 
 def main():
     """
     Runs a quick verification test of the C++ backend.
     """
-    print("--- Principia Semantica Installation Verification ---")
+    print("--- Jörmungandr-Semantica Installation Verification ---")
     
     print("Creating simple sample data...")
     data = np.random.rand(100, 16).astype('float32')
@@ -14,8 +15,10 @@ def main():
 
     print(f"Building k-NN graph with k={k}...")
     try:
-        neighbors, distances = principia_semantica.build_faiss_knn_graph(data, k)
+        # --- RENAMED ---
+        neighbors, distances = jormungandr_semantica.build_faiss_knn_graph(data, k)
 
+        # ... (rest of the file is the same)
         print("\n--- Verification ---")
         print(f"Neighbors shape: {neighbors.shape}")
         print(f"Distances shape: {distances.shape}")
