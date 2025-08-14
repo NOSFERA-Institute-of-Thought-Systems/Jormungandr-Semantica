@@ -1,0 +1,12 @@
+{
+    "method": "jormungandr",
+    "seed": 101,
+    "dataset": "agnews",
+    "k": 15,
+    "umap_dims": 5,
+    "git_hash": "4ccd421737412d7e7c9b860031920a067bd8c37f",
+    "run_timestamp_utc": "2025-08-14T09:31:42.825354",
+    "results": {
+        "ARI": 0.48596673893683334
+    }
+}

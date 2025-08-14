@@ -1,0 +1,6 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/ogiy0xfa
+Loading pre-computed data for: agnews
+Data loaded: 120000 documents, 384 dims, 4 classes.
+
+Running experiment with method: jormungandr
+Step: Building k-NN graph with Faiss...

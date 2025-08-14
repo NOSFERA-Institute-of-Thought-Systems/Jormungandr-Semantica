@@ -1,0 +1,28 @@
+W&B Run URL: https://wandb.ai/mohan-rangan-research-nosfera/Jormungandr-Semantica/runs/78uwxnwp
+Loading pre-computed data for: agnews
+Data loaded: 120000 documents, 384 dims, 4 classes.
+
+Running experiment with method: jormungandr
+Step: Building k-NN graph with Faiss (sparse)...
+Constructing sparse adjacency matrix...
+Initializing PyGSP graph...
+2025-08-14 18:31:57,504:[WARNING](pygsp.graphs.graph.check_weights): The main diagonal of the weight matrix is not 0!
+Step: Using direct embeddings as representation...
+Step: Reducing dimensions with UMAP...
+Step: Clustering with KMeans...
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: divide by zero encountered in matmul
+  ret = a @ b
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: overflow encountered in matmul
+  ret = a @ b
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/utils/extmath.py:203: RuntimeWarning: invalid value encountered in matmul
+  ret = a @ b
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/cluster/_kmeans.py:237: RuntimeWarning: divide by zero encountered in matmul
+  current_pot = closest_dist_sq @ sample_weight
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/cluster/_kmeans.py:237: RuntimeWarning: overflow encountered in matmul
+  current_pot = closest_dist_sq @ sample_weight
+/opt/homebrew/Caskroom/miniforge/base/envs/principia/lib/python3.10/site-packages/sklearn/cluster/_kmeans.py:237: RuntimeWarning: invalid value encountered in matmul
+  current_pot = closest_dist_sq @ sample_weight
+
+Method finished in 68.92 seconds.
+Final Adjusted Rand Index (ARI): 0.4860
+Run manifest saved to: outputs/visionary-snowflake-75-78uwxnwp/manifest.json

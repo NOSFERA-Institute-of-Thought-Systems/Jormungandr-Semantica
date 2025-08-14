@@ -1,0 +1,12 @@
+{
+    "method": "jormungandr",
+    "seed": 42,
+    "dataset": "20newsgroups",
+    "k": 15,
+    "umap_dims": 5,
+    "git_hash": "4ccd421737412d7e7c9b860031920a067bd8c37f",
+    "run_timestamp_utc": "2025-08-14T09:35:25.966994",
+    "results": {
+        "ARI": 0.4108968708840979
+    }
+}

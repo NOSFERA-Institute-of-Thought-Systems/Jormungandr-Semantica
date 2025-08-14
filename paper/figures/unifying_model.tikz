@@ -1,0 +1,99 @@
+% Jörmungandr-Semantica: Unifying Model Figure
+% This TikZ code defines the core schematic for the dissertation.
+
+\begin{tikzpicture}[
+    % Define styles for different elements
+    manifold/.style={
+        shade, top color=blue!20, bottom color=blue!40,
+        rounded corners=20pt, opacity=0.8
+    },
+    graph_node/.style={
+        circle, fill=black, inner sep=1.2pt
+    },
+    graph_edge/.style={
+        gray, line width=0.5pt
+    },
+    highlight_node/.style={
+        circle, fill=red, inner sep=1.5pt
+    },
+    highlight_edge/.style={
+        red, thick
+    },
+    label_text/.style={
+        font=\small\sffamily
+    },
+    arrow/.style={
+        -Stealth, thick
+    }
+]
+
+% --- Layer 1: The Underlying Manifold ---
+% We draw a curved, flowing surface to represent the text manifold
+\begin{scope}[yshift=-2cm]
+    \fill[manifold] (-5,-1.5) .. controls (-3,0.5) and (-1,-2) .. (1,0)
+                        .. controls (3,2) and (4,-1.5) .. (5,0.5)
+                        .. controls (6,2.5) and (4,3.5) .. (2,2)
+                        .. controls (0,0.5) and (-2,3) .. (-4,1.5)
+                        .. controls (-5.5,0.5) and (-6,-1) .. (-5,-1.5);
+    \node[label_text, align=center] at (3.5, -1.5) {1. Latent Text Manifold ($\mathcal{M}$)};
+\end{scope}
+
+% --- Layer 2: Sampling and Graph Discretization ---
+% We place nodes (documents) on the manifold and connect them
+\node[graph_node] (n1) at (-3.5, 0) {};
+\node[graph_node] (n2) at (-2.5, 0.5) {};
+\node[graph_node] (n3) at (-1.5, -0.2) {};
+\node[graph_node] (n4) at (-0.5, 0.8) {};
+\node[graph_node] (n5) at (0.8, 0.2) {};
+\node[graph_node] (n6) at (2.5, 1.5) {};
+\node[graph_node] (n7) at (3.5, 1.8) {};
+\node[graph_node] (n8) at (3.8, 0.8) {};
+\node[graph_node] (n9) at (-1, 1.8) {};
+\node[graph_node] (n10) at (-1.8, 2.2) {};
+
+% Draw edges for the k-NN graph
+\draw[graph_edge] (n1) -- (n2);
+\draw[graph_edge] (n2) -- (n3);
+\draw[graph_edge] (n3) -- (n4);
+\draw[graph_edge] (n4) -- (n5);
+\draw[graph_edge] (n6) -- (n7);
+\draw[graph_edge] (n7) -- (n8);
+\draw[graph_edge] (n9) -- (n10);
+\draw[graph_edge] (n2) -- (n9);
+\draw[graph_edge] (n4) -- (n9);
+
+\node[label_text, align=center] at (-4, 2.8) {2. Discrete Graph ($\mathcal{G}$)\\Approximation};
+
+% --- Layer 3: Geometric & Spectral Analysis ---
+% We draw annotations for Curvature and the Laplacian Spectrum
+
+% Curvature Annotation
+\draw[highlight_edge] (n4) -- (n5);
+\node[highlight_node] at (n4) {};
+\node[highlight_node] at (n5) {};
+\draw[arrow, red] (1.5, -0.5) -- (0.2, 0.4);
+\node[label_text, red, align=left] at (2.5, -0.8) {3a. Ricci Curvature\\$\kappa(e) < 0$ (Bridge)};
+
+% Laplacian Spectrum Annotation
+\begin{scope}[xshift=-4.5cm, yshift=-3cm]
+    \draw[->] (0,0) -- (3,0) node[right] {$\lambda$};
+    \foreach \x/\label in {0.2/$\lambda_1$, 0.5/$\lambda_2$, 1.0/$\lambda_3$, 2.5/$\lambda_n$} {
+        \draw (\x, 0.1) -- (\x, -0.1) node[below] {\label};
+    }
+    \draw[<->, blue, thick] (0.5, 0.3) -- (1.0, 0.3);
+    \node[label_text, blue] at (0.75, 0.6) {Spectral Gap};
+    \node[label_text, align=center] at (1.5, -1.2) {3b. Laplacian Spectrum};
+\end{scope}
+
+% --- Layer 4: Wavelet Representation ---
+% Show a wavelet diffusing from a node
+\begin{scope}[on background layer]
+    \fill[yellow, opacity=0.7, rounded corners=5pt] ($(n6)+(-0.5,-0.5)$) rectangle ($(n6)+(0.5,0.5)$);
+    \fill[yellow, opacity=0.4, rounded corners=10pt] ($(n6)+(-1,-1)$) rectangle ($(n6)+(1,1)$);
+    \fill[yellow, opacity=0.2, rounded corners=15pt] ($(n6)+(-1.5,-1.5)$) rectangle ($(n6)+(1.5,1.5)$);
+\end{scope}
+\node[highlight_node] at (n6) {};
+\draw[arrow, orange] (0, 3) -- (2, 2);
+\node[label_text, orange, align=center] at (0, 3.3) {4. Multi-Scale Wavelet\\Coefficients};
+
+\end{tikzpicture}
