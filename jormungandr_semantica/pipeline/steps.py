@@ -10,7 +10,7 @@ from scipy.sparse.csgraph import connected_components
 from hdbscan import HDBSCAN
 import networkx as nx
 from jormungandr_semantica.wavelets import safe_compute_normalized_laplacian
-# ==============================================================================
+from GraphRicciCurvature.FormanRicci import FormanRicci# ==============================================================================
 # 1. Core Data Structure
 # ==============================================================================
 

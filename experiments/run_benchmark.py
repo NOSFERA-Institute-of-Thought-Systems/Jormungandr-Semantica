@@ -25,7 +25,8 @@ from jormungandr_semantica.pipeline.steps import (
     FeatureUMAPReducer,
     KMeansClusterer,
     HDBSCANClusterer,
-    CommunitySGWTRepresentationBuilder
+    CommunitySGWTRepresentationBuilder,
+    RankSGWTRepresentationBuilder
 )
 
 def set_seed(seed: int):
@@ -88,7 +89,11 @@ def run_experiment(args):
             pipeline_steps.append(FeatureUMAPReducer(config))      
         elif args.representation == "community": # The new option
             pipeline_steps.append(CommunitySGWTRepresentationBuilder(config))
-            pipeline_steps.append(FeatureUMAPReducer(config))              
+            pipeline_steps.append(FeatureUMAPReducer(config))   
+        elif args.representation == "rank":
+            pipeline_steps.append(RankSGWTRepresentationBuilder(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))
+                   
         # --- THE CORRECTED LOGIC ---
         # Select one and only one clusterer based on the argument.
         if args.clusterer == "kmeans":
@@ -138,8 +143,12 @@ def main():
     parser.add_argument("--dataset", type=str, required=True, choices=["20newsgroups", "agnews"])
     
     parser.add_argument("--representation", type=str, default="direct", 
-                        choices=["direct", "wavelet", "cpal", "community"],
+                        choices=["direct", "wavelet", "cpal", "community", "rank"],
                         help="Representation builder for the Jörmungandr pipeline.")
+
+    parser.add_argument("--rank_quantile", type=float, default=0.1, help="Quantile of edges to modulate based on curvature rank.")
+    parser.add_argument("--rank_enhancement", type=float, default=1.5, help="Factor to boost high-curvature edges.")
+    parser.add_argument("--rank_dampening", type=float, default=0.5, help="Factor to dampen low-curvature edges.")
 
     parser.add_argument("--cpal_alpha", type=float, default=4.0)
     parser.add_argument("--cpal_beta", type=float, default=1.0) # beta is not used in new func, but good practice
