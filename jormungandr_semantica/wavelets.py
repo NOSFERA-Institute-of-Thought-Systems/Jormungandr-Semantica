@@ -1,57 +1,40 @@
 import numpy as np
 import networkx as nx
-import scipy.sparse as sp
-from scipy.sparse import diags
 from pygsp.graphs import Graph
-from pygsp.filters import Heat
 from GraphRicciCurvature.OllivierRicci import OllivierRicci
-import pygsp.graphs as graphs
+import scipy.sparse as sp
 
-
+# --- NEW HELPER FUNCTION ---
 def safe_compute_normalized_laplacian(W: sp.spmatrix) -> sp.spmatrix:
     """
-    Computes a normalized Laplacian, robust to isolated nodes.
-    L = I - D^(-1/2) * W * D^(-1/2)
+    Computes a numerically stable normalized Laplacian.
+    Handles nodes with zero or very small degrees to prevent division by zero.
     """
-    # --- DEBUG PROBE ---
     print("    [DEBUG] Entering safe_compute_normalized_laplacian...")
-    
-    # Calculate degree matrix D
+    # Calculate degree, ensuring it's a column vector
     d = np.array(W.sum(axis=1)).flatten()
+    print(f"    [DEBUG] Degree vector 'd' min: {d.min()}, max: {d.max()}, mean: {d.mean()}")
     
-    # --- DEBUG PROBE ---
-    print(f"    [DEBUG] Degree vector 'd' min: {np.min(d)}, max: {np.max(d)}, mean: {np.mean(d)}")
-    if np.any(d < 0):
-        print("    [CRITICAL DEBUG] NEGATIVE DEGREES FOUND IN 'd'. This should be impossible.")
+    # Identify nodes with non-zero degree to avoid division by zero
+    non_zero_degree_indices = d > 1e-12
+    print(f"    [DEBUG] {np.sum(non_zero_degree_indices)} nodes have non-zero degree.")
     
-    # Check for zero-degree nodes, which cause the division error
-    zero_degree_nodes = np.where(d == 0)[0]
-    if len(zero_degree_nodes) > 0:
-        print(f"    [DEBUG] Found {len(zero_degree_nodes)} isolated nodes (degree == 0).")
-
-    # Create D^(-1/2), carefully handling zeros
-    d_inv_sqrt = np.zeros_like(d, dtype=np.float64)
-    non_zero_mask = d > 1e-12 # Use a tolerance for floating point comparison
+    # Create the inverse square root of the degree matrix, but only for non-zero degrees
+    d_inv_sqrt = np.zeros_like(d)
+    d_inv_sqrt[non_zero_degree_indices] = 1.0 / np.sqrt(d[non_zero_degree_indices])
     
-    # --- DEBUG PROBE ---
-    print(f"    [DEBUG] {np.sum(non_zero_mask)} nodes have non-zero degree.")
-
-    d_inv_sqrt[non_zero_mask] = np.power(d[non_zero_mask], -0.5)
+    # Create the sparse diagonal matrix D^-1/2
+    D_inv_sqrt = sp.diags(d_inv_sqrt)
     
-    # --- DEBUG PROBE ---
-    if np.any(np.isinf(d_inv_sqrt)) or np.any(np.isnan(d_inv_sqrt)):
-        print("    [CRITICAL DEBUG] 'inf' or 'NaN' found in d_inv_sqrt. This indicates a problem.")
-
-    D_inv_sqrt = diags(d_inv_sqrt)
-    
-    # Compute the normalized Laplacian
-    I = sp.identity(W.shape[0], dtype=np.float64)
+    # Compute I - D^-1/2 * W * D^-1/2
+    I = sp.identity(W.shape[0], dtype=W.dtype)
     L_norm = I - D_inv_sqrt @ W @ D_inv_sqrt
-    
     print("    [DEBUG] Safely computed normalized Laplacian.")
     return L_norm
 
+
 def compute_heat_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] | None = None, n_eigenvectors: int | None = None) -> np.ndarray:
+    # ... This function is now correct and does not need changes ...
     if signal.shape[0] != graph.N:
         raise ValueError("Signal and graph must have the same number of nodes.")
     if signal.ndim == 1:
@@ -61,11 +44,6 @@ def compute_heat_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] 
         scales = [5, 10, 25, 50]
     
     if not hasattr(graph, '_e') or getattr(graph, '_e', None) is None:
-        print("  -> Manually computing a safe normalized Laplacian...")
-        L_safe = safe_compute_normalized_laplacian(graph.W)
-        graph.L = L_safe
-        print(f"  -> Laplacian computed. Dtype: {graph.L.dtype}, Shape: {graph.L.shape}")
-
         if n_eigenvectors is not None and n_eigenvectors < graph.N:
             print(f"  -> Configuring graph to compute first {n_eigenvectors} eigenvectors (using sparse 'eigs' solver)...")
             graph.eigensolver = 'eigs'
@@ -78,6 +56,11 @@ def compute_heat_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] 
         print("  -> Computing Fourier basis...")
         graph.compute_fourier_basis()
 
+    # PyGSP's filter requires the Laplacian to be computed.
+    if not hasattr(graph, 'L'):
+        graph.compute_laplacian('normalized')
+
+    from pygsp.filters import Heat # Local import to avoid circular dependency issues
     heat_filter = Heat(graph, tau=scales)
 
     all_coeffs = []
@@ -87,36 +70,40 @@ def compute_heat_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] 
 
     return np.stack(all_coeffs, axis=1)
 
+
 def compute_acmw_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] | None = None, alpha: float = 4.0, beta: float = 10.0, n_eigenvectors: int | None = None) -> np.ndarray:
     print("Step (ACMW): Converting to NetworkX and computing Ricci curvature...")
-    W_f64 = graph.W.astype(np.float64)
-    nx_graph = nx.from_scipy_sparse_array(W_f64)
+    nx_graph = nx.from_scipy_sparse_array(graph.W)
     orc = OllivierRicci(nx_graph, alpha=0.0, verbose="INFO")
     orc.compute_ricci_curvature()
     
     print("Step (ACMW): Creating curvature-modulated anisotropic weight matrix...")
-    W_prime = W_f64.copy().tolil()
+    W_prime = graph.W.copy().tolil()
     
-    # --- THE ULTIMATE FIX ---
-    # The original h(kappa) function could produce negative values, leading to
-    # negative edge weights and negative degrees, which is mathematically invalid.
-    # We now clamp the modulation_factor at a small positive epsilon to ensure
-    # all edge weights remain non-negative.
+    # --- THE DEFINITIVE FIX ---
+    # The modulation factor must be non-negative to ensure a valid graph structure.
+    # We clip the output of the sigmoid function before the final scaling.
     h = lambda kappa: alpha * (1 / (1 + np.exp(-beta * kappa)) - 0.5) + 1.0
-    epsilon = 1e-9 # A small positive floor
     
     for u, v, data in orc.G.edges(data=True):
-        kappa = data.get('ricciCurvature', 0.0)
-        modulation_factor = h(kappa)
-        
-        # Clamp the factor to be non-negative.
-        safe_modulation_factor = max(modulation_factor, epsilon)
+        # Calculate the modulation factor
+        modulation_factor = h(data['ricciCurvature'])
+        # Ensure the factor is non-negative before applying it
+        safe_modulation_factor = max(0, modulation_factor)
         
         W_prime[u, v] *= safe_modulation_factor
-        W_prime[v, u] *= safe_modulation_factor
-    
-    anisotropic_graph = graphs.Graph(W=W_prime.tocsr())
+        W_prime[v, u] *= safe_modulation_factor # Assuming symmetric modulation
+        
+    W_prime = W_prime.tocsr()
+
+    # ... (the rest of the function is now correct)
+    print("Step (ACMW): Initializing new anisotropic PyGSP graph...")
+    anisotropic_graph = Graph(W=W_prime)
     print(f"Anisotropic graph constructed. Adjacency matrix (W) dtype: {anisotropic_graph.W.dtype}")
 
-    # This will now be called with a graph that is guaranteed to have non-negative weights.
+    print("  -> Manually computing a safe normalized Laplacian...")
+    L_safe = safe_compute_normalized_laplacian(anisotropic_graph.W)
+    anisotropic_graph.L = L_safe
+    print(f"  -> Laplacian computed. Dtype: {anisotropic_graph.L.dtype}, Shape: {anisotropic_graph.L.shape}")
+    
     return compute_heat_wavelets(anisotropic_graph, signal, scales=scales, n_eigenvectors=n_eigenvectors)

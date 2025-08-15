@@ -14,19 +14,20 @@ from sklearn.metrics import adjusted_rand_score
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
 
-# Import our full suite of pipeline tools
+# --- THE FIX: Import the correct, specific reducer classes ---
 from jormungandr_semantica.pipeline.steps import (
     PipelineData,
     FaissGraphConstructor,
     DirectRepresentationBuilder,
     WaveletRepresentationBuilder,
     ACMWRepresentationBuilder,
-    UMAPReducer,
+    GraphUMAPReducer,
+    FeatureUMAPReducer,
     KMeansClusterer
 )
 
-# Helper functions (set_seed, get_git_hash) remain the same...
 def set_seed(seed: int):
+    """Sets the random seed for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -35,6 +36,7 @@ def set_seed(seed: int):
     print(f"Global random seed set to {seed}")
 
 def get_git_hash() -> str | None:
+    """Gets the current git commit hash."""
     try:
         repo = git.Repo(search_parent_directories=True)
         return repo.head.object.hexsha
@@ -42,6 +44,7 @@ def get_git_hash() -> str | None:
         return None
 
 def run_experiment(args):
+    """Main function to run a single experiment configuration."""
     set_seed(args.seed)
     config = vars(args)
     config["git_hash"] = get_git_hash()
@@ -51,7 +54,13 @@ def run_experiment(args):
     if isinstance(config.get('wavelet_scales'), str):
         config['wavelet_scales'] = [int(s) for s in config['wavelet_scales'].split(',')]
 
-    run = wandb.init(project="Jormungandr-Semantica", job_type="ablation", config=config)
+    job_type = "ablation" if args.method == "jormungandr" else "baseline"
+    
+    run = wandb.init(
+        project="Jormungandr-Semantica",
+        job_type=job_type,
+        config=config
+    )
     print(f"W&B Run URL: {run.url}")
 
     DATA_DIR = Path("data")
@@ -67,27 +76,29 @@ def run_experiment(args):
     if args.method == "jormungandr":
         pipeline_steps = [FaissGraphConstructor(config)]
         
-        # --- Module Selection for Ablation ---
+        # --- THE FIX: Select the correct reducer based on the representation ---
         if args.representation == "direct":
             pipeline_steps.append(DirectRepresentationBuilder(config))
+            pipeline_steps.append(GraphUMAPReducer(config))
         elif args.representation == "wavelet":
             pipeline_steps.append(WaveletRepresentationBuilder(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))
         elif args.representation == "acmw":
             pipeline_steps.append(ACMWRepresentationBuilder(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))
         
-        pipeline_steps.append(UMAPReducer(config))
         pipeline_steps.append(KMeansClusterer(config))
         
         for step in pipeline_steps:
             data = step.run(data)
         labels_pred = data.labels_pred
 
-    # Baselines remain the same...
     elif args.method == "bertopic":
         hdbscan_model = HDBSCAN(min_cluster_size=15, metric='euclidean')
         topic_model = BERTopic(hdbscan_model=hdbscan_model, verbose=False, nr_topics=num_clusters)
         _, _ = topic_model.fit_transform(data.docs, data.embeddings)
         labels_pred = topic_model.topics_
+
     elif args.method == "hdbscan":
         clusterer = HDBSCAN(min_cluster_size=15)
         labels_pred = clusterer.fit_predict(data.embeddings)
@@ -96,6 +107,8 @@ def run_experiment(args):
 
     end_time = time.time()
     duration_seconds = end_time - start_time
+    
+    # Exclude noise points (-1) from ARI calculation for density-based methods
     valid_indices = labels_pred != -1
     ari_score = adjusted_rand_score(data.labels_true[valid_indices], labels_pred[valid_indices])
     
@@ -105,34 +118,37 @@ def run_experiment(args):
 
     output_dir = Path(f"outputs/{run.name}-{run.id}")
     output_dir.mkdir(parents=True, exist_ok=True)
-    result_data = {**config, "results": {"ARI": ari_score}}
+    result_data = {**config, "results": {"ARI": ari_score, "runtime_seconds": duration_seconds}}
     with open(output_dir / "manifest.json", "w") as f:
         json.dump(result_data, f, indent=4)
     print(f"Run manifest saved to: {output_dir / 'manifest.json'}")
     run.finish()
 
 def main():
+    """Parses arguments and runs the experiment."""
     parser = argparse.ArgumentParser(description="Run a modular benchmark/ablation experiment.")
     parser.add_argument("--method", type=str, required=True, choices=["jormungandr", "bertopic", "hdbscan"])
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--dataset", type=str, required=True, choices=["20newsgroups", "agnews"])
     
-    # New arguments to control our pipeline's configuration
+    # Arguments to control the Jörmungandr pipeline's configuration
     parser.add_argument("--representation", type=str, default="direct", 
                         choices=["direct", "wavelet", "acmw"],
                         help="Representation builder to use for the Jörmungandr pipeline.")
     
-    parser.add_argument("--k", type=int, default=15)
-    parser.add_argument("--umap_dims", type=int, default=5)
-    parser.add_argument("--wavelet_scales", type=str, default="10,25,50", 
+    parser.add_argument("--k", type=int, default=15, help="Number of nearest neighbors for the graph.")
+    parser.add_argument("--umap_dims", type=int, default=5, help="Target dimensionality for UMAP.")
+    parser.add_argument("--wavelet_scales", type=str, default="5,15,50,100", 
                         help="Comma-separated list of wavelet scales.")
-    parser.add_argument("--n_eigenvectors", type=int, default=100,
+    parser.add_argument("--n_eigenvectors", type=int, default=200,
                         help="Number of eigenvectors to compute for spectral methods.")
     
     args = parser.parse_args()
+    
     # Enforce single-threaded execution for stability
     import os
     os.environ['OMP_NUM_THREADS'] = '1'
+    
     run_experiment(args)
 
 if __name__ == "__main__":
