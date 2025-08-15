@@ -14,7 +14,7 @@ from sklearn.metrics import adjusted_rand_score
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
 
-# --- THE FIX: Import the correct, specific reducer classes ---
+# Import all the final, correct pipeline steps
 from jormungandr_semantica.pipeline.steps import (
     PipelineData,
     FaissGraphConstructor,
@@ -23,7 +23,9 @@ from jormungandr_semantica.pipeline.steps import (
     ACMWRepresentationBuilder,
     GraphUMAPReducer,
     FeatureUMAPReducer,
-    KMeansClusterer
+    KMeansClusterer,
+    HDBSCANClusterer,
+    CommunitySGWTRepresentationBuilder
 )
 
 def set_seed(seed: int):
@@ -50,7 +52,6 @@ def run_experiment(args):
     config["git_hash"] = get_git_hash()
     config["run_timestamp_utc"] = datetime.utcnow().isoformat()
     
-    # Convert comma-separated string of scales to list of ints
     if isinstance(config.get('wavelet_scales'), str):
         config['wavelet_scales'] = [int(s) for s in config['wavelet_scales'].split(',')]
 
@@ -76,18 +77,24 @@ def run_experiment(args):
     if args.method == "jormungandr":
         pipeline_steps = [FaissGraphConstructor(config)]
         
-        # --- THE FIX: Select the correct reducer based on the representation ---
         if args.representation == "direct":
             pipeline_steps.append(DirectRepresentationBuilder(config))
             pipeline_steps.append(GraphUMAPReducer(config))
         elif args.representation == "wavelet":
             pipeline_steps.append(WaveletRepresentationBuilder(config))
             pipeline_steps.append(FeatureUMAPReducer(config))
-        elif args.representation == "acmw":
+        elif args.representation == "cpal":
             pipeline_steps.append(ACMWRepresentationBuilder(config))
-            pipeline_steps.append(FeatureUMAPReducer(config))
-        
-        pipeline_steps.append(KMeansClusterer(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))      
+        elif args.representation == "community": # The new option
+            pipeline_steps.append(CommunitySGWTRepresentationBuilder(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))              
+        # --- THE CORRECTED LOGIC ---
+        # Select one and only one clusterer based on the argument.
+        if args.clusterer == "kmeans":
+            pipeline_steps.append(KMeansClusterer(config))
+        elif args.clusterer == "hdbscan":
+            pipeline_steps.append(HDBSCANClusterer(config))
         
         for step in pipeline_steps:
             data = step.run(data)
@@ -108,7 +115,6 @@ def run_experiment(args):
     end_time = time.time()
     duration_seconds = end_time - start_time
     
-    # Exclude noise points (-1) from ARI calculation for density-based methods
     valid_indices = labels_pred != -1
     ari_score = adjusted_rand_score(data.labels_true[valid_indices], labels_pred[valid_indices])
     
@@ -131,10 +137,18 @@ def main():
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--dataset", type=str, required=True, choices=["20newsgroups", "agnews"])
     
-    # Arguments to control the Jörmungandr pipeline's configuration
     parser.add_argument("--representation", type=str, default="direct", 
-                        choices=["direct", "wavelet", "acmw"],
-                        help="Representation builder to use for the Jörmungandr pipeline.")
+                        choices=["direct", "wavelet", "cpal", "community"],
+                        help="Representation builder for the Jörmungandr pipeline.")
+
+    parser.add_argument("--cpal_alpha", type=float, default=4.0)
+    parser.add_argument("--cpal_beta", type=float, default=1.0) # beta is not used in new func, but good practice
+    parser.add_argument("--cpal_epsilon", type=float, default=0.01)    
+    parser.add_argument("--community_epsilon", type=float, default=0.1,
+                        help="Dampening factor for inter-community edges.")
+    # --- ADD THE NEW ARGUMENT PARSING ---
+    parser.add_argument("--clusterer", type=str, default="kmeans", choices=["kmeans", "hdbscan"],
+                        help="Clustering algorithm to use at the end of the pipeline.")
     
     parser.add_argument("--k", type=int, default=15, help="Number of nearest neighbors for the graph.")
     parser.add_argument("--umap_dims", type=int, default=5, help="Target dimensionality for UMAP.")
@@ -142,10 +156,10 @@ def main():
                         help="Comma-separated list of wavelet scales.")
     parser.add_argument("--n_eigenvectors", type=int, default=200,
                         help="Number of eigenvectors to compute for spectral methods.")
+    parser.add_argument("--min_cluster_size", type=int, default=15, help="min_cluster_size for HDBSCAN.")
     
     args = parser.parse_args()
     
-    # Enforce single-threaded execution for stability
     import os
     os.environ['OMP_NUM_THREADS'] = '1'
     

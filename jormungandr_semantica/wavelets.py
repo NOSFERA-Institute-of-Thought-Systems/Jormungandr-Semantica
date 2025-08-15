@@ -71,39 +71,48 @@ def compute_heat_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] 
     return np.stack(all_coeffs, axis=1)
 
 
-def compute_acmw_wavelets(graph: Graph, signal: np.ndarray, scales: list[float] | None = None, alpha: float = 4.0, beta: float = 10.0, n_eigenvectors: int | None = None) -> np.ndarray:
-    print("Step (ACMW): Converting to NetworkX and computing Ricci curvature...")
+def compute_acmw_wavelets(
+    graph: Graph, 
+    signal: np.ndarray, 
+    scales: list[float] | None = None, 
+    n_eigenvectors: int | None = None,
+    # --- NEW: Expose the key hyperparameters ---
+    alpha: float = 4.0, 
+    beta: float = 1.0, 
+    epsilon: float = 0.01
+) -> np.ndarray:
+    
+    print("Step (CPAL): Computing Ricci curvature for anisotropic modulation...")
     nx_graph = nx.from_scipy_sparse_array(graph.W)
     orc = OllivierRicci(nx_graph, alpha=0.0, verbose="INFO")
     orc.compute_ricci_curvature()
     
-    print("Step (ACMW): Creating curvature-modulated anisotropic weight matrix...")
+    # Get all curvature values to find the median for centering
+    all_curvatures = [data['ricciCurvature'] for _, _, data in orc.G.edges(data=True)]
+    kappa_0 = np.median(all_curvatures)
+    print(f"Step (CPAL): Centering curvature around median value kappa_0 = {kappa_0:.4f}")
+
+    print("Step (CPAL): Creating connectivity-preserving anisotropic weight matrix...")
     W_prime = graph.W.copy().tolil()
     
-    # --- THE DEFINITIVE FIX ---
-    # The modulation factor must be non-negative to ensure a valid graph structure.
-    # We clip the output of the sigmoid function before the final scaling.
-    h = lambda kappa: alpha * (1 / (1 + np.exp(-beta * kappa)) - 0.5) + 1.0
+    # --- THE CPAL IMPLEMENTATION ---
+    # This is the "soft" modulation function from your research plan.
+    sigmoid = lambda z: 1 / (1 + np.exp(-z))
+    h = lambda kappa: epsilon + (1 - epsilon) * sigmoid(alpha * (kappa - kappa_0))
     
     for u, v, data in orc.G.edges(data=True):
-        # Calculate the modulation factor
         modulation_factor = h(data['ricciCurvature'])
-        # Ensure the factor is non-negative before applying it
-        safe_modulation_factor = max(0, modulation_factor)
-        
-        W_prime[u, v] *= safe_modulation_factor
-        W_prime[v, u] *= safe_modulation_factor # Assuming symmetric modulation
+        # No need for max(0, ...) as h(kappa) is guaranteed to be > epsilon > 0
+        W_prime[u, v] *= modulation_factor
+        W_prime[v, u] *= modulation_factor
         
     W_prime = W_prime.tocsr()
 
-    # ... (the rest of the function is now correct)
-    print("Step (ACMW): Initializing new anisotropic PyGSP graph...")
+    print("Step (CPAL): Initializing new anisotropic PyGSP graph...")
     anisotropic_graph = Graph(W=W_prime)
-    print(f"Anisotropic graph constructed. Adjacency matrix (W) dtype: {anisotropic_graph.W.dtype}")
-
+    
     print("  -> Manually computing a safe normalized Laplacian...")
     L_safe = safe_compute_normalized_laplacian(anisotropic_graph.W)
     anisotropic_graph.L = L_safe
-    print(f"  -> Laplacian computed. Dtype: {anisotropic_graph.L.dtype}, Shape: {anisotropic_graph.L.shape}")
     
     return compute_heat_wavelets(anisotropic_graph, signal, scales=scales, n_eigenvectors=n_eigenvectors)
