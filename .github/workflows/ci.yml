@@ -27,13 +27,13 @@ jobs:
         run: |
           pip install . --no-cache-dir
 
-      - name: Run verification scripts
-        # --- THIS IS THE CRITICAL FIX ---
-        # We define an environment variable for this step.
-        # The `secrets.WANDB_API_KEY` syntax securely accesses the secret we created.
+      - name: Verify Installation and MLOps
+        # --- THE FIX ---
+        # Use the WANDB_API_KEY secret as an environment variable
+        # for the script that needs to log in.
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-        shell: bash -l {0}
         run: |
+          conda activate jormungandr
           python scripts/verify_install.py
           python scripts/verify_wavelets.py

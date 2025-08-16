@@ -10,7 +10,11 @@ from scipy.sparse.csgraph import connected_components
 from hdbscan import HDBSCAN
 import networkx as nx
 from jormungandr_semantica.wavelets import safe_compute_normalized_laplacian
-from GraphRicciCurvature.FormanRicci import FormanRicci# ==============================================================================
+from GraphRicciCurvature.FormanRicci import FormanRicci
+import torch
+from GraphRicciCurvature.FormanRicci import FormanRicci
+
+# ==============================================================================
 # 1. Core Data Structure
 # ==============================================================================
 
@@ -400,6 +404,123 @@ class RankSGWTRepresentationBuilder(RepresentationBuilder):
         n_nodes, n_features, n_scales = coeffs.shape
         representation = coeffs.reshape((n_nodes, n_features * n_scales))
         
+        if not np.all(np.isfinite(representation)):
+            print("[WARNING] Non-finite values found. Sanitizing...")
+            representation = np.nan_to_num(representation, nan=0.0, posinf=0.0, neginf=0.0)
+
+        data.representation = representation
+        return data
+    
+class DifferentiableAnisotropicOperator(torch.nn.Module):
+    def __init__(self, initial_center, epsilon=0.01):
+        super().__init__()
+        self.alpha = torch.nn.Parameter(torch.tensor(1.0))
+        self.center = torch.nn.Parameter(torch.tensor(float(initial_center)))
+        self.epsilon = epsilon
+
+    def h_theta(self, kappa):
+        sensitivity = torch.nn.functional.softplus(self.alpha)
+        return self.epsilon + (1 - self.epsilon) * torch.sigmoid(sensitivity * (kappa - self.center))
+
+    def forward(self, W, kappa_matrix, X_signal, t_scale=5.0):
+        conductance_map = self.h_theta(kappa_matrix)
+        W_prime = W * conductance_map
+        
+        # --- THE STABILITY FIX ---
+        # 2. Construct Differentiable Anisotropic Laplacian L'
+        D_prime_vec = torch.sum(W_prime, dim=1)
+        
+        # Add a small epsilon for numerical stability before taking the inverse square root.
+        # This prevents division by zero if a node becomes disconnected during training.
+        D_inv_sqrt_vec = 1.0 / (torch.sqrt(D_prime_vec) + 1e-8)
+        
+        D_inv_sqrt = torch.diag(D_inv_sqrt_vec)
+        
+        L_aniso = torch.eye(W.shape[0], device=W.device) - D_inv_sqrt @ W_prime @ D_inv_sqrt
+        
+        # ... the rest of the forward pass is the same ...
+        eigenvalues, eigenvectors = torch.linalg.eigh(L_aniso)
+        exp_lambda_t = torch.exp(-t_scale * eigenvalues)
+        Psi_X = eigenvectors @ torch.diag(exp_lambda_t) @ eigenvectors.T @ X_signal
+        
+        return Psi_X
+
+# --- NEW REPRESENTATION BUILDER ---
+
+class LearnableSGWTRepresentationBuilder(RepresentationBuilder):
+    """
+    Builds a representation by learning the optimal anisotropic operator.
+    """
+    def get_triplet(self, y):
+        anchor_idx = np.random.randint(len(y))
+        anchor_label = y[anchor_idx]
+        positive_indices = np.where(y == anchor_label)[0]
+        # Ensure positive is not the same as anchor
+        positive_idx = anchor_idx
+        while positive_idx == anchor_idx:
+            positive_idx = np.random.choice(positive_indices)
+        negative_indices = np.where(y != anchor_label)[0]
+        negative_idx = np.random.choice(negative_indices)
+        return anchor_idx, positive_idx, negative_idx
+
+    def run(self, data: PipelineData) -> PipelineData:
+        print("Step: Building representation with LEARNABLE Anisotropic SGWT...")
+        
+        # --- 1. Pre-computation ---
+        print("  -> Pre-computing Forman-Ricci curvature...")
+        nx_graph = nx.from_scipy_sparse_array(data.graph.W)
+        frc = FormanRicci(nx_graph)
+        frc.compute_ricci_curvature()
+        
+        # Convert graph and curvature to PyTorch tensors
+        W_torch = torch.from_numpy(data.graph.W.toarray()).float()
+        kappa_matrix = torch.zeros_like(W_torch)
+        for u, v, c_data in frc.G.edges(data=True):
+            kappa_matrix[u, v] = c_data['formanCurvature']
+            kappa_matrix[v, u] = c_data['formanCurvature']
+            
+        initial_center = torch.median(kappa_matrix[W_torch > 0])
+        
+        # --- 2. Training Phase ---
+        print(f"  -> Beginning training on a subset of the data...")
+        # For this PoC, we'll use the full dataset's labels to train.
+        # A more rigorous setup would use a train/test split.
+        y_train = data.labels_true
+        X_signal_torch = torch.from_numpy(data.embeddings).float()
+        
+        model = DifferentiableAnisotropicOperator(initial_center=initial_center)
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+        loss_fn = torch.nn.TripletMarginLoss(margin=1.0)
+        
+        num_epochs = self.config.get('learnable_epochs', 50) # Make epochs configurable
+        for epoch in range(num_epochs):
+            model.train()
+            X_prime = model(W_torch, kappa_matrix, X_signal_torch)
+            
+            batch_loss = 0
+            num_triplets = 100
+            for _ in range(num_triplets):
+                a_idx, p_idx, n_idx = self.get_triplet(y_train)
+                anchor, positive, negative = X_prime[a_idx], X_prime[p_idx], X_prime[n_idx]
+                batch_loss += loss_fn(anchor, positive, negative)
+            
+            optimizer.zero_grad()
+            batch_loss.backward()
+            optimizer.step()
+            
+            if epoch % 10 == 0:
+                print(f"    Epoch {epoch:03d}: Loss = {batch_loss.item()/num_triplets:.4f}")
+
+        print("  -> Training complete.")
+        
+        # --- 3. Inference Phase ---
+        print("  -> Computing final representation with learned operator...")
+        model.eval()
+        with torch.no_grad():
+            final_representation_torch = model(W_torch, kappa_matrix, X_signal_torch, t_scale=torch.tensor(50.0)) # Use a larger scale
+        
+        representation = final_representation_torch.numpy()
+
         if not np.all(np.isfinite(representation)):
             print("[WARNING] Non-finite values found. Sanitizing...")
             representation = np.nan_to_num(representation, nan=0.0, posinf=0.0, neginf=0.0)

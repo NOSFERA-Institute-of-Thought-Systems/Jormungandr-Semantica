@@ -21,12 +21,13 @@ from jormungandr_semantica.pipeline.steps import (
     DirectRepresentationBuilder,
     WaveletRepresentationBuilder,
     ACMWRepresentationBuilder,
+    CommunitySGWTRepresentationBuilder,
+    RankSGWTRepresentationBuilder,
+    LearnableSGWTRepresentationBuilder, # <-- IMPORT THE NEW CLASS
     GraphUMAPReducer,
     FeatureUMAPReducer,
     KMeansClusterer,
-    HDBSCANClusterer,
-    CommunitySGWTRepresentationBuilder,
-    RankSGWTRepresentationBuilder
+    HDBSCANClusterer
 )
 
 def set_seed(seed: int):
@@ -86,16 +87,18 @@ def run_experiment(args):
             pipeline_steps.append(FeatureUMAPReducer(config))
         elif args.representation == "cpal":
             pipeline_steps.append(ACMWRepresentationBuilder(config))
-            pipeline_steps.append(FeatureUMAPReducer(config))      
-        elif args.representation == "community": # The new option
+            pipeline_steps.append(FeatureUMAPReducer(config))
+        elif args.representation == "community":
             pipeline_steps.append(CommunitySGWTRepresentationBuilder(config))
-            pipeline_steps.append(FeatureUMAPReducer(config))   
+            pipeline_steps.append(FeatureUMAPReducer(config))
         elif args.representation == "rank":
             pipeline_steps.append(RankSGWTRepresentationBuilder(config))
             pipeline_steps.append(FeatureUMAPReducer(config))
-                   
-        # --- THE CORRECTED LOGIC ---
-        # Select one and only one clusterer based on the argument.
+        # --- ADD THE NEW LOGICAL BRANCH ---
+        elif args.representation == "learnable":
+            pipeline_steps.append(LearnableSGWTRepresentationBuilder(config))
+            pipeline_steps.append(FeatureUMAPReducer(config))
+        
         if args.clusterer == "kmeans":
             pipeline_steps.append(KMeansClusterer(config))
         elif args.clusterer == "hdbscan":
@@ -106,20 +109,20 @@ def run_experiment(args):
         labels_pred = data.labels_pred
 
     elif args.method == "bertopic":
+        # ... (baseline logic is unchanged)
         hdbscan_model = HDBSCAN(min_cluster_size=15, metric='euclidean')
         topic_model = BERTopic(hdbscan_model=hdbscan_model, verbose=False, nr_topics=num_clusters)
         _, _ = topic_model.fit_transform(data.docs, data.embeddings)
         labels_pred = topic_model.topics_
-
     elif args.method == "hdbscan":
         clusterer = HDBSCAN(min_cluster_size=15)
         labels_pred = clusterer.fit_predict(data.embeddings)
     else:
         raise ValueError(f"Unknown method: {args.method}")
 
+    # ... (evaluation and logging logic is unchanged)
     end_time = time.time()
     duration_seconds = end_time - start_time
-    
     valid_indices = labels_pred != -1
     ari_score = adjusted_rand_score(data.labels_true[valid_indices], labels_pred[valid_indices])
     
@@ -142,30 +145,30 @@ def main():
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--dataset", type=str, required=True, choices=["20newsgroups", "agnews"])
     
+    # --- ADD 'learnable' to choices ---
     parser.add_argument("--representation", type=str, default="direct", 
-                        choices=["direct", "wavelet", "cpal", "community", "rank"],
+                        choices=["direct", "wavelet", "cpal", "community", "rank", "learnable"],
                         help="Representation builder for the Jörmungandr pipeline.")
-
-    parser.add_argument("--rank_quantile", type=float, default=0.1, help="Quantile of edges to modulate based on curvature rank.")
-    parser.add_argument("--rank_enhancement", type=float, default=1.5, help="Factor to boost high-curvature edges.")
-    parser.add_argument("--rank_dampening", type=float, default=0.5, help="Factor to dampen low-curvature edges.")
-
-    parser.add_argument("--cpal_alpha", type=float, default=4.0)
-    parser.add_argument("--cpal_beta", type=float, default=1.0) # beta is not used in new func, but good practice
-    parser.add_argument("--cpal_epsilon", type=float, default=0.01)    
-    parser.add_argument("--community_epsilon", type=float, default=0.1,
-                        help="Dampening factor for inter-community edges.")
-    # --- ADD THE NEW ARGUMENT PARSING ---
-    parser.add_argument("--clusterer", type=str, default="kmeans", choices=["kmeans", "hdbscan"],
+    
+    parser.add_argument("--clusterer", type=str, default="hdbscan", choices=["kmeans", "hdbscan"],
                         help="Clustering algorithm to use at the end of the pipeline.")
     
-    parser.add_argument("--k", type=int, default=15, help="Number of nearest neighbors for the graph.")
-    parser.add_argument("--umap_dims", type=int, default=5, help="Target dimensionality for UMAP.")
-    parser.add_argument("--wavelet_scales", type=str, default="5,15,50,100", 
-                        help="Comma-separated list of wavelet scales.")
-    parser.add_argument("--n_eigenvectors", type=int, default=200,
-                        help="Number of eigenvectors to compute for spectral methods.")
-    parser.add_argument("--min_cluster_size", type=int, default=15, help="min_cluster_size for HDBSCAN.")
+    parser.add_argument("--k", type=int, default=15)
+    parser.add_argument("--umap_dims", type=int, default=5)
+    parser.add_argument("--wavelet_scales", type=str, default="5,15,50,100")
+    parser.add_argument("--n_eigenvectors", type=int, default=200)
+    parser.add_argument("--min_cluster_size", type=int, default=15)
+    
+    # --- ADD ARGUMENTS for the new builders ---
+    parser.add_argument("--community_epsilon", type=float, default=0.1)
+    parser.add_argument("--rank_quantile", type=float, default=0.1)
+    parser.add_argument("--rank_enhancement", type=float, default=1.5)
+    parser.add_argument("--rank_dampening", type=float, default=0.5)
+    parser.add_argument("--cpal_alpha", type=float, default=4.0)
+    parser.add_argument("--cpal_epsilon", type=float, default=0.01)
+    
+    # --- ADD THE NEW ARGUMENT FOR THE LEARNING PHASE ---
+    parser.add_argument("--learnable_epochs", type=int, default=50, help="Number of epochs to train the learnable operator.")
     
     args = parser.parse_args()
     
