@@ -15,7 +15,7 @@ from bertopic import BERTopic
 from hdbscan import HDBSCAN
 
 # Import all the final, correct pipeline steps
-from jormungandr_semantica.pipeline.steps import (
+from jormungandr_semantica.pipeline.steps2 import (
     PipelineData,
     FaissGraphConstructor,
     DirectRepresentationBuilder,
@@ -27,8 +27,12 @@ from jormungandr_semantica.pipeline.steps import (
     GraphUMAPReducer,
     FeatureUMAPReducer,
     KMeansClusterer,
-    HDBSCANClusterer
+    HDBSCANClusterer,
+    LearnableRepresentationBuilder
+    # JAXDifferentiableChebyshev
 )
+
+
 
 def set_seed(seed: int):
     """Sets the random seed for reproducibility."""
@@ -96,7 +100,7 @@ def run_experiment(args):
             pipeline_steps.append(FeatureUMAPReducer(config))
         # --- ADD THE NEW LOGICAL BRANCH ---
         elif args.representation == "learnable":
-            pipeline_steps.append(LearnableSGWTRepresentationBuilder(config))
+            pipeline_steps.append(LearnableRepresentationBuilder(config))
             pipeline_steps.append(FeatureUMAPReducer(config))
         
         if args.clusterer == "kmeans":
