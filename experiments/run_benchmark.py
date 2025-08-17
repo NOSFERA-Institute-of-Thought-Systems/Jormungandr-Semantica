@@ -15,7 +15,7 @@ from bertopic import BERTopic
 from hdbscan import HDBSCAN
 
 # Import all the final, correct pipeline steps
-from aglt.pipeline.steps2 import (
+from aglt.pipeline.steps import (
     PipelineData,
     FaissGraphConstructor,
     DirectRepresentationBuilder,

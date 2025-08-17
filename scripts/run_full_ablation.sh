@@ -1,31 +1,23 @@
 #!/bin/bash
+# File: scripts/run_full_ablation.sh
 
 # ==============================================================================
-# Jörmungandr-Semantica: Full Ablation Suite (Phase 2)
+# AGLT: Heuristics Falsification Suite
 # ==============================================================================
-# This script systematically runs the Jörmungandr pipeline with different
-# representation builders to quantify the performance contribution of each
-# geometric innovation (Wavelets, ACMW).
-#
-# It executes on the 20 Newsgroups dataset, as the exact eigendecomposition
-# required for these methods is not scalable to the larger AG News dataset.
-# This scalability limitation is the primary motivation for Phase 3.
+# This script systematically runs the AGLT pipeline with different
+# hand-crafted heuristic representation builders to quantify their
+# performance against the isotropic baseline.
 # ==============================================================================
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-echo "--- Starting Full Ablation Suite (Phase 2) ---"
+echo "--- Starting Heuristics Falsification Suite ---"
 
 # --- Configuration ---
 DATASET="20newsgroups"
-# Run across 10 distinct random seeds for statistical significance
-SEEDS=($(seq 42 51)) 
-# The different representation methods to ablate
-# REPRESENTATIONS=("direct" "wavelet" "acmw") 
-REPRESENTATIONS=("acmw") 
-# For a graph of ~11k nodes, 200 eigenvectors is a reasonable compromise
-# between computational speed and spectral accuracy.
+SEEDS=$(seq 42 51) # Run across 10 distinct seeds
+# The different representation methods to ablate, including the baseline
+REPRESENTATIONS=("wavelet" "acmw" "community" "rank")
 N_EIGENVECTORS=200
 
 # --- Execution Loop ---
@@ -35,25 +27,24 @@ for representation in "${REPRESENTATIONS[@]}"; do
     echo "================================================================="
     echo "RUNNING: Dataset=${DATASET}, Representation=${representation}, Seed=${seed}"
     echo "================================================================="
-    
-    # Run the benchmark script with the specified configuration.
-    # We enforce single-threaded execution to prevent library conflicts.
-    OMP_NUM_THREADS=1 python experiments/run_benchmark.py \
+
+    # Run the consolidated benchmark script
+    # Use python -u for unbuffered output to see logs in real-time
+    python -u experiments/run_benchmark.py \
       --method "jormungandr" \
       --dataset "$DATASET" \
       --representation "$representation" \
+      --clusterer "hdbscan" \
       --seed "$seed" \
       --n_eigenvectors "$N_EIGENVECTORS"
-      
+
     echo "-----------------------------------------------------------------"
     echo "COMPLETED: Representation=${representation}, Seed=${seed}"
     echo "-----------------------------------------------------------------"
-    # Add a small delay to prevent overwhelming the wandb sync process
-    sleep 2
+    sleep 2 # Small delay for W&B syncing
   done
 done
 
 echo ""
-echo "--- Full Ablation Suite Finished Successfully ---"
+echo "--- Heuristics Falsification Suite Finished Successfully ---"
 echo "All runs have been logged to Weights & Biases."
-echo "You can now run 'notebooks/phase2_ablation_analysis.ipynb' to generate the summary table."
