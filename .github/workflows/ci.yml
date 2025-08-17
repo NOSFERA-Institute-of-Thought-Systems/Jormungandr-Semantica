@@ -1,3 +1,5 @@
+# File: .github/workflows/ci.yml
+
 name: Build and Test CI
 
 on:
@@ -20,20 +22,19 @@ jobs:
           auto-update-conda: true
           python-version: "3.10"
           environment-file: environment.yml
-          activate-environment: jormungandr
+          activate-environment: aglt # Use the new environment name
 
-      - name: Build and install project
+      - name: Build and install project with dev dependencies
+        # THIS IS THE FIX: The shell command `bash -l {0}` makes conda available.
+        # We also install with the [dev] extras to get pytest.
         shell: bash -l {0}
         run: |
-          pip install . --no-cache-dir
+          pip install -e ".[dev]" --no-cache-dir
 
-      - name: Verify Installation and MLOps
-        # --- THE FIX ---
-        # Use the WANDB_API_KEY secret as an environment variable
-        # for the script that needs to log in.
+      - name: Run the full test suite
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        # Use the same login shell for consistency
+        shell: bash -l {0}
         run: |
-          conda activate jormungandr
-          python scripts/verify_install.py
-          python scripts/verify_wavelets.py
+          pytest
