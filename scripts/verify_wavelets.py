@@ -1,8 +1,10 @@
 # scripts/verify_wavelets.py
 import numpy as np
 import pygsp.graphs as graphs
+
 # --- RENAMED ---
-from jormungandr_semantica import compute_heat_wavelets
+from aglt import compute_heat_wavelets
+
 
 def main():
     """
@@ -31,9 +33,9 @@ def main():
         print(f"Input signal shape:   {signal.shape}")
         print(f"Expected coeffs shape: {expected_shape}")
         print(f"Actual coeffs shape:   {coeffs.shape}")
-        
+
         assert coeffs.shape == expected_shape
-        
+
         print("\n\n********************************************************")
         print("**** SUCCESS: WAVELET MODULE IS WORKING CORRECTLY ****")
         print("********************************************************")
@@ -41,6 +43,7 @@ def main():
     except Exception as e:
         print(f"\nAn error occurred during wavelet computation: {e}")
         print("****      VERIFICATION FAILED!                  ****")
+
 
 if __name__ == "__main__":
     main()

@@ -48,20 +48,20 @@ Once installed, you can use the core components of the library.
 
 ```python
 import numpy as np
-import jormungandr_semantica
+import aglt
 import pygsp.graphs as graphs
 
 # 1. Create sample data
 data = np.random.rand(100, 16).astype('float32')
 
 # 2. Build a k-NN graph with the high-performance C++ backend
-neighbors, distances = jormungandr_semantica.build_faiss_knn_graph(data, k=10)
+neighbors, distances = aglt.build_faiss_knn_graph(data, k=10)
 print(f"k-NN graph built. Neighbors shape: {neighbors.shape}")
 
 # 3. Use the graph with PyGSP and compute wavelets
 G = graphs.Graph(W=distances) # A simplified example
 G.compute_fourier_basis()
 signal = data[:, 0] # Use the first feature as a signal
-coeffs = jormungandr_semantica.compute_heat_wavelets(G, signal)
+coeffs = aglt.compute_heat_wavelets(G, signal)
 print(f"Wavelet coefficients computed. Shape: {coeffs.shape}")
 ```

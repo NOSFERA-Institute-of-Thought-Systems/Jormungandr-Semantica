@@ -2,6 +2,7 @@
 Jörmungandr-Semantica
 ...
 """
+
 # Import from the C++ backend
 from ._core import build_faiss_knn_graph
 

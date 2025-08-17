@@ -1,0 +1,102 @@
+\documentclass[11pt, letterpaper]{article}
+
+% --- PACKAGES ---
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{algorithm, algpseudocode}
+\usepackage{enumitem}
+\usepackage{times}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --- STYLING ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=blue,
+    urlcolor=blue,
+}
+\linespread{1.1}
+\lstset{
+    backgroundcolor=\color{black!5},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{black!20},
+    showstringspaces=false,
+    language=Python,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!40!black},
+    stringstyle=\color{purple},
+}
+
+% --- TITLE ---
+\title{\textbf{Technical Report 1: Analysis of a Computational Bottleneck in a Scalable, Learnable Graph Operator}}
+\author{Mohana Rangan Desigan}
+\date{\today}
+
+% --- DOCUMENT START ---
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report documents the current status and primary technical challenge of the Jörmungandr-Semantica research program. The program's goal is to develop a learnable, anisotropic graph diffusion operator for unsupervised representation learning. We chronicle the systematic failure of several hand-crafted heuristics (based on curvature and community structure), which led to the development of a scalable, differentiable learning framework built in PyTorch. This framework replaces the intractable $O(N^3)$ differentiable eigendecomposition with a scalable $O(m|E|D)$ Chebyshev polynomial approximation. While this new architecture is theoretically sound and has resolved all prior bugs, its practical implementation on CPU has revealed a significant performance bottleneck. A single training epoch on the 11,314-node 20 Newsgroups graph takes several minutes, making iterative research infeasible. This report formalizes the architecture, pinpoints the source of the bottleneck, and frames the immediate research objective: to overcome this performance barrier via GPU acceleration.
+\end{abstract}
+
+\section{Architectural Overview}
+The current system is a modular pipeline designed to learn an optimal anisotropic diffusion operator.
+
+\subsection{Core Components}
+\begin{enumerate}
+    \item \textbf{Graph Construction:} A k-NN graph $G=(V, E, W)$ is built from input embeddings using Faiss.
+    \item \textbf{Geometric Signal:} Forman-Ricci curvature, $\kappa_{ij}$, is computed for each edge.
+    \item \textbf{Learnable Operator:} A PyTorch \texttt{nn.Module}, the \texttt{DifferentiableChebyshevOperator}.
+    \item \textbf{Training Loop:} Optimizes the operator's parameters $\theta$ by minimizing a triplet margin loss.
+\end{enumerate}
+
+\subsection{The Scalable, Differentiable Forward Pass}
+The core of the system computes the action of the wavelet transform $X' = e^{-tL_{\text{aniso}, \theta}}X$ via a Chebyshev polynomial approximation. The key computational step is a recurrence loop:
+\begin{lstlisting}
+# Inside the Chebyshev recurrence loop:
+Tk_X = 2 * torch.sparse.mm(L_rescaled, T1_X) - T0_X
+\end{lstlisting}
+
+\section{The Performance Bottleneck: Diagnosis}
+
+\subsection{Problem Statement}
+Despite being theoretically scalable, the practical performance on CPU is prohibitive. A single training epoch on the 20 Newsgroups dataset ($N \approx 11k, |E| \approx 118k, D=384$) takes several minutes.
+
+\subsection{Analysis}
+The system appears to hang before the first epoch's progress is logged. The dominant computation is the Chebyshev recurrence, which involves $m=30$ successive \texttt{torch.sparse.mm} operations. The bottleneck is attributed to a combination of factors:
+\begin{itemize}
+    \item \textbf{Computational Cost:} Each epoch requires $\approx 5.4 \times 10^9$ floating point operations.
+    \item \textbf{Memory Traffic:} Intermediate products are large, dense matrices ($(11314, 384) \approx 17.4$ MB each), leading to significant latency when repeatedly accessed in CPU RAM.
+    \item \textbf{Framework Overhead:} PyTorch's CPU backend for sparse operations and its associated autograd machinery are less optimized than their dense or GPU (CUDA) counterparts.
+\end{itemize}
+
+\section{Current Status and Path Forward}
+
+We are at a critical juncture where the project is a theoretical success but a practical bottleneck.
+\begin{itemize}
+    \item \textbf{What Works:} The pipeline is architecturally sound. All previously identified bugs have been resolved.
+    \item \textbf{What is Broken:} The performance on CPU is too slow for effective research.
+\end{itemize}
+The immediate research objective is to \textbf{overcome this computational bottleneck}.
+
+% --- THE FIX IS HERE ---
+% I have replaced the incorrect list formatting with a proper itemize environment
+% and ensured all \textbf commands are correctly terminated.
+\begin{enumerate}
+    \item \textbf{Primary Path: GPU Acceleration (Kaggle/Colab).} The most direct solution is to execute the existing PyTorch code on a platform with an NVIDIA GPU and a CUDA environment. The \texttt{torch.sparse.mm} operation is highly optimized for CUDA. This is expected to yield a 10-100x speedup. This will be the focus of the next experimental sprint.
+
+    \item \textbf{Secondary Path (Investigation): MPS Backend on Apple Silicon.} Our attempt to use the \texttt{mps} backend failed due to incomplete support for sparse tensors in PyTorch. We will continue to monitor the state of PyTorch MPS support.
+
+    \item \textbf{Tertiary Path (Investigation): JAX Re-implementation.} A mature JAX implementation remains a viable alternative, as its JIT compiler (\texttt{@jax.jit}) is exceptionally effective at optimizing sequential operations like the Chebyshev recurrence on both CPU and GPU.
+\end{enumerate}
+
+This report concludes with the system in a ``ready for acceleration'' state. The next step is to execute the capstone experiment on a GPU-enabled platform to finally validate the performance of the learned anisotropic operator.
+
+\end{document}

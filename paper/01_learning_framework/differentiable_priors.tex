@@ -1,0 +1,122 @@
+\documentclass[11pt, letterpaper]{article}
+
+% --- PACKAGES ---
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{algorithm, algpseudocode}
+\usepackage{enumitem}
+\usepackage{times} % Use a classic, readable font like Times New Roman
+
+% --- STYLING ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=blue,
+    urlcolor=blue,
+}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newtheorem{theorem}{Theorem}
+\linespread{1.1} % Improve readability
+
+% --- TITLE ---
+\title{\textbf{A Differentiable Framework for Learning Geometric Priors in Graph Representation Learning}}
+\author{Mohana Rangan Desigan \\ \textit{Independent Research}}
+\date{\today}
+
+% --- DOCUMENT START ---
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The graph Laplacian is a cornerstone of representation learning on non-Euclidean data, forming the basis for spectral clustering, diffusion maps, and graph wavelet transforms. However, its standard formulation is isotropic, assuming information diffuses uniformly in all directions. This assumption fails to capture the inherent anisotropy of real-world data manifolds, such as the distinction between coherent "semantic threads" and tenuous "conceptual bridges" in knowledge graphs. Hand-crafting anisotropic operators to address this is brittle and often leads to catastrophic failures like graph fragmentation.
+
+We resolve this challenge by proposing a new paradigm: learning the operator itself. This paper introduces a fully differentiable pipeline that learns the parameters of a geometry-to-conductance mapping by optimizing a downstream, task-specific loss. The framework's key components include a parameterized, connectivity-preserving mapping function $h_\theta(\kappa)$, a differentiable symmetric eigendecomposition layer, and a contrastive loss function. By backpropagating through the entire spectral transform, our system learns the optimal, data-driven geometric prior, discovering how to warp the manifold's diffusion process to best suit the learning task. We provide the complete theoretical blueprint, address the core research challenges of scalability and expressivity, and demonstrate feasibility with a proof-of-concept implementation that successfully learns to enhance cluster structure.
+\end{abstract}
+
+\section{The Parameterized Curvature-to-Conductance Mapping}
+
+The central hypothesis of anisotropic graph learning is that the local geometry of a data manifold, often captured by a measure of discrete Ricci curvature $\kappa$, should inform the diffusion process. We reframe the problem from one of design to one of \textit{learning}, introducing a parameterized family of monotonic, strictly positive functions, $h_\theta(\kappa)$.
+
+\subsection{Axiomatic Requirements}
+Any valid mapping must satisfy:
+\begin{enumerate}
+    \item \textbf{Strict Positivity (Connectivity Preservation):} $h_\theta(\kappa) \ge \varepsilon > 0$.
+    \item \textbf{Monotonicity:} The mapping should be non-decreasing.
+    \item \textbf{Differentiability:} $h_\theta(\kappa)$ must be differentiable with respect to its parameters $\theta$.
+\end{enumerate}
+
+\subsection{The Shifted Sigmoid Family}
+The first family of functions that satisfies these axioms is the \textbf{learnable shifted sigmoid}:
+\begin{equation}
+    h_\theta(\kappa) = \varepsilon + (1 - \varepsilon) \cdot \sigma(\theta_1(\kappa - \theta_2))
+    \label{eq:sigmoid_family}
+\end{equation}
+where $\sigma(z) = (1 + e^{-z})^{-1}$ is the logistic sigmoid function, and the learnable parameters are the sensitivity $\theta_1 \in \mathbb{R}^+$ and the centering point $\theta_2 \in \mathbb{R}$.
+
+\section{The Differentiable Anisotropic Pipeline}
+To learn the optimal parameters $\theta$ of the mapping $h_\theta$, we must construct an end-to-end differentiable computational graph (Algorithm~\ref{alg:forward_pass}) that maps $\theta$ to a final representation $X'_{\theta}$.
+
+\begin{algorithm}[h!]
+\caption{Differentiable Anisotropic Representation (Forward Pass)}
+\label{alg:forward_pass}
+\begin{algorithmic}[1]
+\Require Graph $G=(V, E, W)$, curvature $\kappa$, signal $X$, scale $t$, learnable parameters $\theta$.
+\Ensure Anisotropic representation $X'_{\theta} \in \mathbb{R}^{N \times D}$.
+\Statex
+\State $W'_\theta \gets W \odot h_\theta(\kappa)$ \Comment{Element-wise modulation of edge weights}
+\State $D'_\theta \gets \text{diag}(\sum_j w'_{ij})$
+\State $L_{\text{aniso}, \theta} \gets I - (D'_\theta)^{-1/2} W'_\theta (D'_\theta)^{-1/2}$
+\State $\{\lambda_{k, \theta}\}, U_\theta \gets \text{Eigendecompose}(L_{\text{aniso}, \theta})$ \Comment{Differentiable w.r.t. $\theta$}
+\State $\Psi_{t, \theta} \gets U_\theta e^{-t\text{diag}(\lambda_{k, \theta})} U_\theta^\top$ \Comment{Differentiable graph wavelet operator}
+\State $X'_{\theta} \gets \Psi_{t, \theta} X$
+\State \textbf{return} $X'_{\theta}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{The Differentiable Eigendecomposition Layer}
+The key enabler is the use of a differentiable symmetric eigendecomposition layer, available in modern auto-differentiation frameworks like PyTorch (\texttt{torch.linalg.eigh}). This allows gradients to flow from a downstream loss back to the mapping parameters $\theta$, treating spectral analysis as a learnable component.
+
+\section{Loss Function and Optimization}
+We learn $\theta$ by minimizing a task-specific loss. For unsupervised or semi-supervised learning, a contrastive loss is ideal. The triplet margin loss for an anchor $x'_i$, positive $x'_j$, and negative $x'_k$ is:
+\begin{equation}
+    \mathcal{L}_{\text{triplet}}(i, j, k; \theta) = \max \left( \|x'_{i,\theta} - x'_{j,\theta}\|_2^2 - \|x'_{i,\theta} - x'_{k,\theta}\|_2^2 + m, \, 0 \right)
+\end{equation}
+where $m > 0$ is a fixed margin. The system iteratively samples triplets, computes the loss, and updates $\theta$ via backpropagation and a standard optimizer like Adam.
+
+\section{Challenges and Integrated Research Directions}
+This framework, while powerful, presents a series of integrated research challenges that must be addressed to create a truly robust and scalable system. We frame these not as future work, but as core components of the present research program, to be validated with small-scale experiments on free-tier platforms.
+
+\begin{description}[style=unboxed, leftmargin=0pt]
+    \item[Computational Scalability] The full eigendecomposition scales as $O(N^3)$, making it infeasible for large graphs.
+    \begin{itemize}
+        \item \textbf{Research Direction:} We will implement and validate differentiable approximations of the spectral transform. The primary approach will be to replace the full eigendecomposition with a differentiable \textbf{Chebyshev polynomial approximation} of the matrix exponential $e^{-tL_{\text{aniso}, \theta}}$, reducing the forward pass complexity to be near-linear in the number of edges.
+    \end{itemize}
+
+    \item[Fidelity of the Geometric Signal] Discrete Ricci curvature can be noisy and computationally expensive.
+    \begin{itemize}
+        \item \textbf{Research Direction:} We will investigate replacing curvature with a more robust and scalable geometric signal. A leading candidate is a \textbf{learned local descriptor}, where a small graph neural network (GNN) is trained jointly to produce a low-dimensional summary of a node's local neighborhood topology, which then serves as the input to $h_\theta$.
+    \end{itemize}
+
+    \item[Expressivity of the Mapping] The shifted sigmoid, while interpretable, may be too simple.
+    \begin{itemize}
+        \item \textbf{Research Direction:} We will implement a more expressive, learnable mapping using a \textbf{Monotonic Neural Network}. By constraining the weights of a small MLP to be non-negative, we can learn an arbitrarily complex monotonic function $h_\theta$ while still satisfying the axiomatic requirements.
+    \end{itemize}
+
+    \item[Generalization and Overfitting] A mapping $h_\theta$ tuned to a specific task may overspecialize.
+    \begin{itemize}
+        \item \textbf{Research Direction:} To combat this, we will incorporate a \textbf{geometric regularizer} into the loss function. For instance, a term that penalizes excessive deviation from the isotropic case, $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{triplet}} + \gamma \|L_{\text{aniso}, \theta} - L_{\text{iso}}\|_F^2$, encourages the system to find the minimal geometric modification necessary to solve the task.
+    \end{itemize}
+
+    \item[Integration with Spatial GNNs] The proposed framework is purely spectral, while the dominant paradigm in graph learning is spatial message-passing.
+    \begin{itemize}
+        \item \textbf{Research Direction:} We will design and implement a \textbf{hybrid spectral-spatial layer}. This layer will perform a standard message passing update, but the aggregation weights will be modulated by the learned anisotropic conductance $h_\theta(\kappa_{ij})$. This hybridizes the scalability of spatial methods with the global, geometric awareness of our spectral operator.
+    \end{itemize}
+\end{description}
+
+By systematically addressing these challenges, this research program aims to deliver not just a single algorithm, but a complete, robust, and scalable framework for learning on geometric graphs.
+
+\end{document}

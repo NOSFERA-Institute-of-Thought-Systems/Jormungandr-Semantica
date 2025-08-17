@@ -5,6 +5,7 @@ from torch_geometric.utils.convert import from_scipy_sparse_matrix
 
 print("--- Verification Script for Scalable Differentiable Operator ---")
 
+
 # --- 1. Define the Operator ---
 class DifferentiableChebyshevOperator(torch.nn.Module):
     def __init__(self, chebyshev_order=30):
@@ -19,7 +20,7 @@ class DifferentiableChebyshevOperator(torch.nn.Module):
         N = L_sparse.shape[0]
         # For normalized Laplacian, lambda_max is approximately 2.
         lambda_max = 2.0
-        
+
         # Rescale Laplacian to have spectrum in [-1, 1]
         L_rescaled = (2.0 / lambda_max) * L_sparse - torch.sparse.spdiags(
             torch.ones(N), torch.tensor([0]), (N, N)
@@ -30,42 +31,43 @@ class DifferentiableChebyshevOperator(torch.nn.Module):
         M = self.chebyshev_order
         # Sample points in the cosine domain
         j = np.arange(M, dtype=np.float64)
-        x = np.cos(np.pi * (j + 0.5) / M) # Chebyshev nodes
-        
+        x = np.cos(np.pi * (j + 0.5) / M)  # Chebyshev nodes
+
         # Evaluate the target function f(lambda) at these nodes
         # lambda = (lambda_max / 2) * (x + 1)
         lambdas = (lambda_max / 2.0) * (x + 1.0)
         f_vals = np.exp(-t_scale * lambdas)
-        
+
         # Compute coefficients via Discrete Cosine Transform
         c = np.fft.fft(f_vals) / M
-        c = np.real(c) # Should be real anyway
+        c = np.real(c)  # Should be real anyway
         coeffs = torch.from_numpy(c).float()
 
         # --- Three-term recurrence for T_k(L_rescaled)X ---
         T0_X = X
         T1_X = torch.sparse.mm(L_rescaled, X)
-        
+
         # The sum starts with the first two terms. Need to handle c0 carefully.
         # DCT gives coefficients for a slightly different basis.
         # Let's use a simpler, direct summation for clarity.
-        
+
         # Let's re-implement the coefficient calculation exactly as per textbooks
         coeffs = torch.zeros(M)
         for k in range(M):
             T_k_x = np.cos(k * np.arccos(x))
             coeffs[k] = (2.0 / M) * np.sum(f_vals * T_k_x)
         coeffs[0] /= 2.0
-        
+
         # Let's run the recurrence
         current_sum = (coeffs[0] * T0_X) + (coeffs[1] * T1_X)
-        
+
         for k in range(2, self.chebyshev_order):
             Tk_X = 2 * torch.sparse.mm(L_rescaled, T1_X) - T0_X
             current_sum = current_sum + (coeffs[k] * Tk_X)
             T0_X, T1_X = T1_X, Tk_X
-            
+
         return current_sum
+
 
 # --- 2. Create Toy Data ---
 print("\nStep 1: Creating toy graph and data...")
@@ -89,7 +91,9 @@ ground_truth = eigenvectors @ torch.diag(exp_lambda_t) @ eigenvectors.T @ X_torc
 
 # --- 4. Compute Approximation ---
 print("Step 3: Computing approximation via differentiable operator...")
-model = DifferentiableChebyshevOperator(chebyshev_order=40) # Increase order for more accuracy
+model = DifferentiableChebyshevOperator(
+    chebyshev_order=40
+)  # Increase order for more accuracy
 approximation = model(L_torch_sparse, X_torch, t_scale=t_scale)
 
 # --- 5. Verify and Test ---

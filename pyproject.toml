@@ -1,13 +1,15 @@
+# File: pyproject.toml
+
 [build-system]
 requires = ["scikit-build-core", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
 # --- RENAMED ---
-name = "Jormungandr-Semantica"
-version = "0.1.0" # Let's also bump the version to 0.1.0 to mark this significant change
-description = "A framework for geometric deep learning in semantic analysis."
-authors = [{ name = "Your Name", email = "your.email@example.com" }]
+name = "aglt"
+version = "0.2.0" # Bump version to mark this major refactoring
+description = "AGLT: A Framework for Anisotropic Graph Learning."
+authors = [{ name = "Mythogenesys Research Group" }] # Updated Author
 license = { text = "MIT" }
 requires-python = ">=3.8"
 
@@ -24,11 +26,19 @@ dependencies = [
     "datasets",
     "sentence-transformers",
     "pingouin",
-    "GraphRicciCurvature>=0.5.2"
+    "GraphRicciCurvature>=0.5.2",
+    "tqdm",
+    "pandas",
+    "networkx",
+    "scipy"
 ]
+
+# --- NEW: Development Dependencies ---
+[project.optional-dependencies]
+dev = ["pytest", "black", "ruff", "pre-commit"]
 
 [tool.scikit-build]
 cmake.source-dir = "cpp_backend"
 # --- RENAMED ---
-# Tell the build system our package is now in the 'jormungandr_semantica' folder
-wheel.packages = ["jormungandr_semantica"]
+# Tell the build system our package is now in the 'aglt' folder
+wheel.packages = ["aglt"]

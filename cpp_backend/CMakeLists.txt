@@ -30,4 +30,4 @@ set_target_properties(_core PROPERTIES
 # --- RENAMED ---
 # Install our compiled module into the new package directory.
 install(TARGETS _core
-        DESTINATION jormungandr_semantica)
+        DESTINATION aglt)

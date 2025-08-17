@@ -1,7 +1,8 @@
 # scripts/verify_acmw.py
 import numpy as np
 import pygsp.graphs as graphs
-from jormungandr_semantica import compute_acmw_wavelets
+from aglt import compute_acmw_wavelets
+
 
 def main():
     """
@@ -10,7 +11,7 @@ def main():
     print("--- Jörmungandr-Semantica ACMW Module Verification ---")
 
     # 1. Define graph and signal parameters
-    n_nodes = 30 # Use a smaller graph as curvature calculation can be slow
+    n_nodes = 30  # Use a smaller graph as curvature calculation can be slow
     n_features = 2
     scales_to_test = [10, 20]
     n_scales = len(scales_to_test)
@@ -34,9 +35,9 @@ def main():
         print(f"Input signal shape:   {signal.shape}")
         print(f"Expected coeffs shape: {expected_shape}")
         print(f"Actual coeffs shape:   {coeffs.shape}")
-        
+
         assert coeffs.shape == expected_shape
-        
+
         print("\n\n********************************************************")
         print("**** SUCCESS: ACMW MODULE IS WORKING CORRECTLY ****")
         print("********************************************************")
@@ -46,7 +47,9 @@ def main():
         print("****      VERIFICATION FAILED!                  ****")
         # Print full traceback for debugging
         import traceback
+
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()
